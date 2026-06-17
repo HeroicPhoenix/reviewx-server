@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS `question` (
-    `question_id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '题目ID',
+    `question_id` VARCHAR(255) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '题目ID',
     `question_content` LONGTEXT NOT NULL COMMENT '题干',
     `question_image_base64` LONGTEXT DEFAULT NULL COMMENT '题目图片Base64',
     `option_1` TEXT DEFAULT NULL COMMENT '备选答案1',
