@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lvwyh.reviewx.web.mapper.auth.SysUserRoleMapper">
+    <insert id="insert">
+        INSERT INTO SYS_USER_ROLE (USER_ID, ROLE_ID) VALUES (#{userId}, #{roleId})
+    </insert>
+
+    <select id="countByUserIdAndRoleId" resultType="long">
+        SELECT COUNT(1) FROM SYS_USER_ROLE WHERE USER_ID = #{userId} AND ROLE_ID = #{roleId}
+    </select>
+</mapper>

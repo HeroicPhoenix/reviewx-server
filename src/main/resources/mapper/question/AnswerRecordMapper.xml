@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lvwyh.reviewx.web.mapper.question.AnswerRecordMapper">
+    <sql id="Base_Column_List">
+        answer_record_id, question_id, user_id, session_id, selected_answer, correct_answer,
+        is_correct, start_time, end_time, created_time, updated_time
+    </sql>
+
+    <insert id="insert" parameterType="com.lvwyh.reviewx.web.entity.question.AnswerRecord" useGeneratedKeys="true" keyProperty="answerRecordId" keyColumn="answer_record_id">
+        INSERT INTO answer_record (
+            question_id, user_id, session_id, selected_answer, correct_answer, is_correct, start_time, end_time, created_time, updated_time
+        ) VALUES (
+            #{questionId}, #{userId}, #{sessionId}, #{selectedAnswer}, #{correctAnswer}, #{isCorrect}, #{startTime}, #{endTime}, #{createdTime}, #{updatedTime}
+        )
+    </insert>
+
+    <sql id="Page_Where">
+        user_id = #{userId}
+        <if test="questionId != null and questionId != ''">
+            AND question_id = #{questionId}
+        </if>
+        <if test="isCorrect != null">
+            AND is_correct = #{isCorrect}
+        </if>
+        <if test="startTime != null">
+            AND end_time &gt;= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND end_time &lt;= #{endTime}
+        </if>
+    </sql>
+
+    <select id="selectPage" resultType="com.lvwyh.reviewx.web.entity.question.AnswerRecord">
+        SELECT <include refid="Base_Column_List"/>
+        FROM answer_record
+        WHERE <include refid="Page_Where"/>
+        ORDER BY end_time DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="countPage" resultType="long">
+        SELECT COUNT(1)
+        FROM answer_record
+        WHERE <include refid="Page_Where"/>
+    </select>
+
+    <select id="countTotal" resultType="long">
+        SELECT COUNT(1) FROM answer_record WHERE user_id = #{userId}
+    </select>
+
+    <select id="countCorrect" resultType="long">
+        SELECT COUNT(1) FROM answer_record WHERE user_id = #{userId} AND is_correct = 1
+    </select>
+
+    <select id="avgDurationMs" resultType="long">
+        SELECT CAST(COALESCE(AVG(TIMESTAMPDIFF(MICROSECOND, start_time, end_time) / 1000), 0) AS UNSIGNED)
+        FROM answer_record
+        WHERE user_id = #{userId}
+    </select>
+</mapper>

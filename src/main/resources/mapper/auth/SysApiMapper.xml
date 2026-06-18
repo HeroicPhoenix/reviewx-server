@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lvwyh.reviewx.web.mapper.auth.SysApiMapper">
+    <insert id="insert" parameterType="com.lvwyh.reviewx.web.entity.auth.SysApi" useGeneratedKeys="true" keyProperty="apiId" keyColumn="API_ID">
+        INSERT INTO SYS_API (API_CODE, API_NAME, API_PATH, HTTP_METHOD, STATUS)
+        VALUES (#{apiCode}, #{apiName}, #{apiPath}, #{httpMethod}, #{status})
+    </insert>
+
+    <select id="selectByApiCode" resultType="com.lvwyh.reviewx.web.entity.auth.SysApi">
+        SELECT API_ID, API_CODE, API_NAME, API_PATH, HTTP_METHOD, STATUS
+        FROM SYS_API
+        WHERE API_CODE = #{apiCode}
+        LIMIT 1
+    </select>
+
+    <select id="selectPermissionCodesByUserId" resultType="string">
+        SELECT a.API_CODE
+        FROM SYS_API a
+        INNER JOIN SYS_ROLE_API_PERMISSION rap ON rap.API_ID = a.API_ID
+        INNER JOIN SYS_USER_ROLE ur ON ur.ROLE_ID = rap.ROLE_ID
+        WHERE ur.USER_ID = #{userId}
+          AND a.STATUS = 1
+    </select>
+</mapper>

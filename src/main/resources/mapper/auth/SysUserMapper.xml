@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lvwyh.reviewx.web.mapper.auth.SysUserMapper">
+    <sql id="Base_Column_List">
+        USER_ID, USERNAME, PASSWORD_HASH, NICK_NAME, USER_STATUS, IS_DELETE, IS_ALLOW_ROLE_CHANGE, CREATE_TIME, UPDATE_TIME
+    </sql>
+
+    <insert id="insert" parameterType="com.lvwyh.reviewx.web.entity.auth.SysUser" useGeneratedKeys="true" keyProperty="userId" keyColumn="USER_ID">
+        INSERT INTO SYS_USER (USERNAME, PASSWORD_HASH, NICK_NAME, USER_STATUS, IS_DELETE, IS_ALLOW_ROLE_CHANGE, CREATE_TIME, UPDATE_TIME)
+        VALUES (#{username}, #{passwordHash}, #{nickName}, #{userStatus}, #{isDelete}, #{isAllowRoleChange}, #{createTime}, #{updateTime})
+    </insert>
+
+    <select id="selectById" resultType="com.lvwyh.reviewx.web.entity.auth.SysUser">
+        SELECT <include refid="Base_Column_List"/> FROM SYS_USER WHERE USER_ID = #{userId} LIMIT 1
+    </select>
+
+    <select id="selectByUsername" resultType="com.lvwyh.reviewx.web.entity.auth.SysUser">
+        SELECT <include refid="Base_Column_List"/> FROM SYS_USER WHERE USERNAME = #{username} LIMIT 1
+    </select>
+
+    <update id="update" parameterType="com.lvwyh.reviewx.web.entity.auth.SysUser">
+        UPDATE SYS_USER
+        SET PASSWORD_HASH = #{passwordHash}, NICK_NAME = #{nickName}, USER_STATUS = #{userStatus},
+            IS_DELETE = #{isDelete}, IS_ALLOW_ROLE_CHANGE = #{isAllowRoleChange}, UPDATE_TIME = #{updateTime}
+        WHERE USER_ID = #{userId}
+    </update>
+</mapper>

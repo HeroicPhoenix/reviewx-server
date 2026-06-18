@@ -52,3 +52,8 @@ mybatis:
   mapper-locations: classpath:mapper/**/*.xml
   configuration:
     map-underscore-to-camel-case: true
+
+reviewx:
+  jwt:
+    secret: ${REVIEWX_JWT_SECRET:ReviewXJwtSecretKeyForLocalDevelopmentOnly123456}
+    expire-seconds: ${REVIEWX_JWT_EXPIRE_SECONDS:7200}
