@@ -1,0 +1,187 @@
+package com.lvwyh.reviewx.web.service.question.impl;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.lvwyh.reviewx.web.common.exception.BusinessException;
+import com.lvwyh.reviewx.web.entity.question.Question;
+import com.lvwyh.reviewx.web.mapper.question.QuestionMapper;
+import com.lvwyh.reviewx.web.service.question.QuestionImportService;
+import com.lvwyh.reviewx.web.vo.question.QuestionImportFailureVO;
+import com.lvwyh.reviewx.web.vo.question.QuestionImportResultVO;
+import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+
+/**
+ * 题目导入服务实现。
+ *
+ * 从固定 zip 文件中读取各题型目录下的 JSON 文件，logs 目录会被跳过。
+ */
+@Service
+public class QuestionImportServiceImpl implements QuestionImportService {
+
+    private static final String DEFAULT_ZIP_PATH = "docs/识别结果id输出.zip";
+    private static final String LOGS_DIR_NAME = "logs";
+
+    private final QuestionMapper questionMapper;
+    private final ObjectMapper objectMapper;
+
+    public QuestionImportServiceImpl(QuestionMapper questionMapper, ObjectMapper objectMapper) {
+        this.questionMapper = questionMapper;
+        this.objectMapper = objectMapper;
+    }
+
+    @Override
+    public QuestionImportResultVO importFromDocsZip() {
+        File zipFile = new File(DEFAULT_ZIP_PATH);
+        if (!zipFile.exists() || !zipFile.isFile()) {
+            throw new BusinessException(404, "题目导入文件不存在：" + DEFAULT_ZIP_PATH);
+        }
+
+        QuestionImportResultVO result = new QuestionImportResultVO();
+        try (ZipInputStream zipInputStream = new ZipInputStream(new java.io.FileInputStream(zipFile), StandardCharsets.UTF_8)) {
+            ZipEntry entry;
+            while ((entry = zipInputStream.getNextEntry()) != null) {
+                if (entry.isDirectory() || !entry.getName().endsWith(".json") || shouldSkip(entry.getName())) {
+                    continue;
+                }
+                result.increaseTotalFileCount();
+                importJsonFile(entry.getName(), readEntry(zipInputStream), result);
+            }
+        } catch (IOException e) {
+            throw new BusinessException(500, "读取题目导入文件失败", e);
+        }
+        return result;
+    }
+
+    /**
+     * 导入单个 JSON 文件中的全部题目。
+     */
+    private void importJsonFile(String fileName, byte[] content, QuestionImportResultVO result) {
+        String questionType = resolveQuestionType(fileName);
+        try {
+            JsonNode root = objectMapper.readTree(content);
+            if (!root.isArray()) {
+                result.addFailure(new QuestionImportFailureVO(fileName, questionType, null, null, "JSON根节点不是数组"));
+                return;
+            }
+            int index = 0;
+            for (JsonNode item : root) {
+                index++;
+                result.increaseTotalQuestionCount();
+                importQuestion(fileName, questionType, index, item, result);
+            }
+        } catch (Exception e) {
+            result.addFailure(new QuestionImportFailureVO(fileName, questionType, null, null, "文件解析失败：" + e.getMessage()));
+        }
+    }
+
+    /**
+     * 导入单道题目。
+     */
+    private void importQuestion(String fileName, String questionType, int index, JsonNode item, QuestionImportResultVO result) {
+        String questionId = text(item, "id");
+        if (!StringUtils.hasText(questionId)) {
+            result.addMissingIdQuestion(new QuestionImportFailureVO(fileName, questionType, index, null, "题目缺少id"));
+            return;
+        }
+        try {
+            Question question = toQuestion(questionId, questionType, item);
+            questionMapper.upsert(question);
+            result.increaseSuccessQuestionCount();
+        } catch (Exception e) {
+            result.addFailure(new QuestionImportFailureVO(fileName, questionType, index, questionId, "题目导入失败：" + e.getMessage()));
+        }
+    }
+
+    /**
+     * 将 JSON 节点转换成 QUESTION 表实体。
+     */
+    private Question toQuestion(String questionId, String questionType, JsonNode item) throws IOException {
+        LocalDateTime now = LocalDateTime.now();
+        JsonNode options = item.get("options");
+
+        Question question = new Question();
+        question.setQuestionId(questionId);
+        question.setQuestionType(questionType);
+        question.setQuestionContent(text(item, "question"));
+        question.setQuestionImageBase64(firstText(item, "question_image_base64", "image_base64", "image"));
+        question.setOption1(option(options, "A"));
+        question.setOption2(option(options, "B"));
+        question.setOption3(option(options, "C"));
+        question.setOption4(option(options, "D"));
+        question.setOption5(option(options, "E"));
+        question.setOption6(option(options, "F"));
+        question.setOption7(option(options, "G"));
+        question.setOption8(option(options, "H"));
+        question.setAnswerContent(item.has("answer") ? objectMapper.writeValueAsString(item.get("answer")) : "[]");
+        question.setAnswerSource(text(item, "answer_source"));
+        question.setQuestionYear(text(item, "year"));
+        question.setQuestionSource(text(item, "question_source"));
+        question.setCorrectRate(text(item, "correct_rate"));
+        question.setQuestionStatus(1);
+        question.setCreatedTime(now);
+        question.setUpdatedTime(now);
+        return question;
+    }
+
+    /**
+     * 从 zip 路径中解析题目类型。
+     */
+    private String resolveQuestionType(String fileName) {
+        String[] parts = fileName.split("/");
+        return parts.length >= 3 ? parts[1] : "";
+    }
+
+    /**
+     * 判断 zip 内文件是否需要跳过。
+     */
+    private boolean shouldSkip(String fileName) {
+        String[] parts = fileName.split("/");
+        return parts.length >= 2 && LOGS_DIR_NAME.equalsIgnoreCase(parts[1]);
+    }
+
+    /**
+     * 读取当前 zip entry 的全部字节。
+     */
+    private byte[] readEntry(ZipInputStream zipInputStream) throws IOException {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        byte[] buffer = new byte[4096];
+        int len;
+        while ((len = zipInputStream.read(buffer)) != -1) {
+            outputStream.write(buffer, 0, len);
+        }
+        return outputStream.toByteArray();
+    }
+
+    private String option(JsonNode options, String key) {
+        if (options == null || !options.has(key) || options.get(key).isNull()) {
+            return "";
+        }
+        return options.get(key).asText("");
+    }
+
+    private String firstText(JsonNode node, String... fieldNames) {
+        for (String fieldName : fieldNames) {
+            String value = text(node, fieldName);
+            if (StringUtils.hasText(value)) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    private String text(JsonNode node, String fieldName) {
+        if (node == null || !node.has(fieldName) || node.get(fieldName).isNull()) {
+            return null;
+        }
+        return node.get(fieldName).asText();
+    }
+}
