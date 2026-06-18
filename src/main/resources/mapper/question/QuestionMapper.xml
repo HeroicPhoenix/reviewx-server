@@ -3,60 +3,97 @@
 <mapper namespace="com.lvwyh.reviewx.web.mapper.question.QuestionMapper">
     <!-- question 表完整字段清单，用于普通查询。 -->
     <sql id="Base_Column_List">
-        question_id, question_content, question_image_base64, option_1, option_2, option_3, option_4,
-        option_5, option_6, option_7, option_8, answer_content, answer_source, question_year,
-        question_source, correct_rate, question_status, created_time, updated_time
+        QUESTION_ID, QUESTION_TYPE, QUESTION_CONTENT, QUESTION_IMAGE_BASE64, OPTION_1, OPTION_2, OPTION_3, OPTION_4,
+        OPTION_5, OPTION_6, OPTION_7, OPTION_8, ANSWER_CONTENT, ANSWER_SOURCE, QUESTION_YEAR,
+        QUESTION_SOURCE, CORRECT_RATE, QUESTION_STATUS, CREATED_TIME, UPDATED_TIME
     </sql>
     <!-- 带 q 表别名的字段清单，用于 join 查询，避免列名歧义。 -->
     <sql id="Q_Base_Column_List">
-        q.question_id, q.question_content, q.question_image_base64, q.option_1, q.option_2, q.option_3, q.option_4,
-        q.option_5, q.option_6, q.option_7, q.option_8, q.answer_content, q.answer_source, q.question_year,
-        q.question_source, q.correct_rate, q.question_status, q.created_time, q.updated_time
+        q.QUESTION_ID, q.QUESTION_TYPE, q.QUESTION_CONTENT, q.QUESTION_IMAGE_BASE64, q.OPTION_1, q.OPTION_2, q.OPTION_3, q.OPTION_4,
+        q.OPTION_5, q.OPTION_6, q.OPTION_7, q.OPTION_8, q.ANSWER_CONTENT, q.ANSWER_SOURCE, q.QUESTION_YEAR,
+        q.QUESTION_SOURCE, q.CORRECT_RATE, q.QUESTION_STATUS, q.CREATED_TIME, q.UPDATED_TIME
     </sql>
+
+    <!-- 导入题目时按 QUESTION_ID 幂等写入；重复导入会更新题目内容。 -->
+    <insert id="upsert" parameterType="com.lvwyh.reviewx.web.entity.question.Question">
+        INSERT INTO QUESTION (
+            QUESTION_ID, QUESTION_TYPE, QUESTION_CONTENT, QUESTION_IMAGE_BASE64,
+            OPTION_1, OPTION_2, OPTION_3, OPTION_4, OPTION_5, OPTION_6, OPTION_7, OPTION_8,
+            ANSWER_CONTENT, ANSWER_SOURCE, QUESTION_YEAR, QUESTION_SOURCE, CORRECT_RATE,
+            QUESTION_STATUS, CREATED_TIME, UPDATED_TIME
+        ) VALUES (
+            #{questionId}, #{questionType}, #{questionContent}, #{questionImageBase64},
+            #{option1}, #{option2}, #{option3}, #{option4}, #{option5}, #{option6}, #{option7}, #{option8},
+            #{answerContent}, #{answerSource}, #{questionYear}, #{questionSource}, #{correctRate},
+            #{questionStatus}, #{createdTime}, #{updatedTime}
+        )
+        ON DUPLICATE KEY UPDATE
+            QUESTION_TYPE = VALUES(QUESTION_TYPE),
+            QUESTION_CONTENT = VALUES(QUESTION_CONTENT),
+            QUESTION_IMAGE_BASE64 = VALUES(QUESTION_IMAGE_BASE64),
+            OPTION_1 = VALUES(OPTION_1),
+            OPTION_2 = VALUES(OPTION_2),
+            OPTION_3 = VALUES(OPTION_3),
+            OPTION_4 = VALUES(OPTION_4),
+            OPTION_5 = VALUES(OPTION_5),
+            OPTION_6 = VALUES(OPTION_6),
+            OPTION_7 = VALUES(OPTION_7),
+            OPTION_8 = VALUES(OPTION_8),
+            ANSWER_CONTENT = VALUES(ANSWER_CONTENT),
+            ANSWER_SOURCE = VALUES(ANSWER_SOURCE),
+            QUESTION_YEAR = VALUES(QUESTION_YEAR),
+            QUESTION_SOURCE = VALUES(QUESTION_SOURCE),
+            CORRECT_RATE = VALUES(CORRECT_RATE),
+            QUESTION_STATUS = VALUES(QUESTION_STATUS),
+            UPDATED_TIME = VALUES(UPDATED_TIME)
+    </insert>
 
     <!-- 题目搜索通用过滤条件：只查询启用题目，并按需过滤关键词、年份和来源。 -->
     <sql id="Search_Where">
-        question_status = 1
+        QUESTION_STATUS = 1
         <if test="keyword != null and keyword != ''">
-            AND question_content LIKE CONCAT('%', #{keyword}, '%')
+            AND QUESTION_CONTENT LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        <if test="questionType != null and questionType != ''">
+            AND QUESTION_TYPE = #{questionType}
         </if>
         <if test="questionYear != null and questionYear != ''">
-            AND question_year = #{questionYear}
+            AND QUESTION_YEAR = #{questionYear}
         </if>
         <if test="questionSource != null and questionSource != ''">
-            AND question_source = #{questionSource}
+            AND QUESTION_SOURCE = #{questionSource}
         </if>
     </sql>
 
     <!-- 按题目 ID 查询详情，详情接口会基于该结果返回答案和图片。 -->
     <select id="selectById" resultType="com.lvwyh.reviewx.web.entity.question.Question">
         SELECT <include refid="Base_Column_List"/>
-        FROM question
-        WHERE question_id = #{questionId}
-          AND question_status = 1
+        FROM QUESTION
+        WHERE QUESTION_ID = #{questionId}
+          AND QUESTION_STATUS = 1
         LIMIT 1
     </select>
 
     <!-- 分页搜索题目，当前用于查看题库。 -->
     <select id="search" resultType="com.lvwyh.reviewx.web.entity.question.Question">
         SELECT <include refid="Base_Column_List"/>
-        FROM question
+        FROM QUESTION
         WHERE <include refid="Search_Where"/>
-        ORDER BY created_time DESC
+        ORDER BY CREATED_TIME DESC
         LIMIT #{offset}, #{pageSize}
     </select>
 
     <!-- 统计搜索条件下的题目数量，用于分页 total。 -->
     <select id="countSearch" resultType="long">
         SELECT COUNT(1)
-        FROM question
+        FROM QUESTION
         WHERE <include refid="Search_Where"/>
     </select>
 
     <!-- 随机抽题，用于普通随机练习。 -->
     <select id="selectRandom" resultType="com.lvwyh.reviewx.web.entity.question.Question">
         SELECT <include refid="Base_Column_List"/>
-        FROM question
+        FROM QUESTION
         WHERE <include refid="Search_Where"/>
         ORDER BY RAND()
         LIMIT #{size}
@@ -65,28 +102,31 @@
     <!-- 顺序取题，用于按题库顺序刷题。 -->
     <select id="selectOrder" resultType="com.lvwyh.reviewx.web.entity.question.Question">
         SELECT <include refid="Base_Column_List"/>
-        FROM question
+        FROM QUESTION
         WHERE <include refid="Search_Where"/>
-        ORDER BY question_id ASC
+        ORDER BY QUESTION_ID ASC
         LIMIT #{offset}, #{pageSize}
     </select>
 
     <!-- 错题取题：先取当前用户答错过的题目 ID，再关联题目表随机返回。 -->
     <select id="selectWrong" resultType="com.lvwyh.reviewx.web.entity.question.Question">
         SELECT <include refid="Q_Base_Column_List"/>
-        FROM question q
+        FROM QUESTION q
         INNER JOIN (
-            SELECT DISTINCT question_id
-            FROM answer_record
-            WHERE user_id = #{userId}
-              AND is_correct = 0
-        ) r ON r.question_id = q.question_id
-        WHERE q.question_status = 1
+            SELECT DISTINCT QUESTION_ID
+            FROM ANSWER_RECORD
+            WHERE USER_ID = #{userId}
+              AND IS_CORRECT = 0
+        ) r ON r.QUESTION_ID = q.QUESTION_ID
+        WHERE q.QUESTION_STATUS = 1
+        <if test="questionType != null and questionType != ''">
+            AND q.QUESTION_TYPE = #{questionType}
+        </if>
         <if test="questionYear != null and questionYear != ''">
-            AND q.question_year = #{questionYear}
+            AND q.QUESTION_YEAR = #{questionYear}
         </if>
         <if test="questionSource != null and questionSource != ''">
-            AND q.question_source = #{questionSource}
+            AND q.QUESTION_SOURCE = #{questionSource}
         </if>
         ORDER BY RAND()
         LIMIT #{size}

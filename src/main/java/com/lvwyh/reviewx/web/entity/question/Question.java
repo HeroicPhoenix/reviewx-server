@@ -11,6 +11,8 @@ public class Question {
 
     /** 题目字符串 ID，来自外部题库 JSON。 */
     private String questionId;
+    /** 题目类型。 */
+    private String questionType;
     /** 题干文本。 */
     private String questionContent;
     /** 题目图片 Base64。 */
@@ -43,6 +45,8 @@ public class Question {
 
     public String getQuestionId() { return questionId; }
     public void setQuestionId(String questionId) { this.questionId = questionId; }
+    public String getQuestionType() { return questionType; }
+    public void setQuestionType(String questionType) { this.questionType = questionType; }
     public String getQuestionContent() { return questionContent; }
     public void setQuestionContent(String questionContent) { this.questionContent = questionContent; }
     public String getQuestionImageBase64() { return questionImageBase64; }

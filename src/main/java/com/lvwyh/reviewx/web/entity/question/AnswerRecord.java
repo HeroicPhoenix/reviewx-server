@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 /**
  * 答题记录实体。
  *
- * 映射 answer_record 表，只记录用户真正提交答案的行为，不记录浏览题目的行为。
+ * 映射 ANSWER_RECORD 表，只记录用户真正提交答案的行为，不记录浏览题目的行为。
  */
 public class AnswerRecord {
 

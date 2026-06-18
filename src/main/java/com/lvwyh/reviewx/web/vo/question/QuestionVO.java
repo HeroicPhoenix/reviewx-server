@@ -15,6 +15,8 @@ public class QuestionVO implements Serializable {
 
     /** 题目字符串 ID。 */
     private String questionId;
+    /** 题目类型。 */
+    private String questionType;
     /** 题干内容。 */
     private String questionContent;
     /** 题目图片 Base64，列表接口通常不返回以减少响应体积。 */
@@ -41,6 +43,8 @@ public class QuestionVO implements Serializable {
 
     public String getQuestionId() { return questionId; }
     public void setQuestionId(String questionId) { this.questionId = questionId; }
+    public String getQuestionType() { return questionType; }
+    public void setQuestionType(String questionType) { this.questionType = questionType; }
     public String getQuestionContent() { return questionContent; }
     public void setQuestionContent(String questionContent) { this.questionContent = questionContent; }
     public String getQuestionImageBase64() { return questionImageBase64; }

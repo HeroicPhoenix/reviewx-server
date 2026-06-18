@@ -16,14 +16,14 @@ public interface QuestionService {
     QuestionVO detail(String questionId);
 
     /** 搜索题目，返回分页结果。 */
-    PageResult<QuestionVO> search(String keyword, String questionYear, String questionSource, Integer pageNum, Integer pageSize);
+    PageResult<QuestionVO> search(String keyword, String questionType, String questionYear, String questionSource, Integer pageNum, Integer pageSize);
 
     /** 随机抽题，不返回正确答案。 */
-    List<QuestionVO> randomList(String questionYear, String questionSource, Integer size);
+    List<QuestionVO> randomList(String questionType, String questionYear, String questionSource, Integer size);
 
     /** 顺序分页取题，不返回正确答案。 */
-    PageResult<QuestionVO> orderList(String questionYear, String questionSource, Integer pageNum, Integer pageSize);
+    PageResult<QuestionVO> orderList(String questionType, String questionYear, String questionSource, Integer pageNum, Integer pageSize);
 
     /** 从当前用户错题中随机取题，不返回正确答案。 */
-    List<QuestionVO> wrongList(Long userId, String questionYear, String questionSource, Integer size);
+    List<QuestionVO> wrongList(Long userId, String questionType, String questionYear, String questionSource, Integer size);
 }

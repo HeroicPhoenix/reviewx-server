@@ -14,11 +14,15 @@ import java.util.List;
 @Mapper
 public interface QuestionMapper {
 
+    /** 新增或更新题目，导入题库时按 questionId 幂等写入。 */
+    int upsert(Question question);
+
     /** 按题目 ID 查询启用状态的题目。 */
     Question selectById(@Param("questionId") String questionId);
 
     /** 按关键字、年份、来源分页搜索题目。 */
     List<Question> search(@Param("keyword") String keyword,
+                          @Param("questionType") String questionType,
                           @Param("questionYear") String questionYear,
                           @Param("questionSource") String questionSource,
                           @Param("offset") int offset,
@@ -26,22 +30,26 @@ public interface QuestionMapper {
 
     /** 统计搜索条件下的题目总数。 */
     long countSearch(@Param("keyword") String keyword,
+                     @Param("questionType") String questionType,
                      @Param("questionYear") String questionYear,
                      @Param("questionSource") String questionSource);
 
     /** 随机抽取题目。 */
-    List<Question> selectRandom(@Param("questionYear") String questionYear,
+    List<Question> selectRandom(@Param("questionType") String questionType,
+                                @Param("questionYear") String questionYear,
                                 @Param("questionSource") String questionSource,
                                 @Param("size") int size);
 
     /** 按题目 ID 顺序分页查询题目。 */
-    List<Question> selectOrder(@Param("questionYear") String questionYear,
+    List<Question> selectOrder(@Param("questionType") String questionType,
+                               @Param("questionYear") String questionYear,
                                @Param("questionSource") String questionSource,
                                @Param("offset") int offset,
                                @Param("pageSize") int pageSize);
 
     /** 从当前用户历史错题中随机抽取题目。 */
     List<Question> selectWrong(@Param("userId") Long userId,
+                               @Param("questionType") String questionType,
                                @Param("questionYear") String questionYear,
                                @Param("questionSource") String questionSource,
                                @Param("size") int size);

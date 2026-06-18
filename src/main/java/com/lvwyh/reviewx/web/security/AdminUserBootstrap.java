@@ -46,6 +46,7 @@ public class AdminUserBootstrap implements ApplicationRunner {
             {"auth:logout", "退出登录", "/api/auth/logout", "POST"},
             {"question:view", "查看题目", "/api/question/detail", "GET"},
             {"question:search", "搜索题目", "/api/question/search", "GET"},
+            {"question:import", "导入题目", "/api/question/importFromDocsZip", "POST"},
             {"practice:question", "刷题取题", "/api/practice/**", "GET"},
             {"practice:submit", "提交答案", "/api/practice/submitAnswer", "POST"},
             {"answer-record:view", "查看答题记录", "/api/answerRecord/**", "GET"}

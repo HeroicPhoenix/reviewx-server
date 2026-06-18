@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * 答题记录 Mapper。
  *
- * 负责 answer_record 表写入、分页查询和用户维度统计。
+ * 负责 ANSWER_RECORD 表写入、分页查询和用户维度统计。
  */
 @Mapper
 public interface AnswerRecordMapper {

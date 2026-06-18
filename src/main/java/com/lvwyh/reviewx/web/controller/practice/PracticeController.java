@@ -51,10 +51,11 @@ public class PracticeController {
     @Operation(summary = "随机刷题")
     @RequirePermission("practice:question")
     @GetMapping("/randomList")
-    public ApiResponse<List<QuestionVO>> randomList(@RequestParam(required = false) String questionYear,
+    public ApiResponse<List<QuestionVO>> randomList(@RequestParam(required = false) String questionType,
+                                                    @RequestParam(required = false) String questionYear,
                                                     @RequestParam(required = false) String questionSource,
                                                     @RequestParam(required = false) Integer size) {
-        return ApiResponse.success("查询成功", questionService.randomList(questionYear, questionSource, size));
+        return ApiResponse.success("查询成功", questionService.randomList(questionType, questionYear, questionSource, size));
     }
 
     /**
@@ -63,11 +64,12 @@ public class PracticeController {
     @Operation(summary = "顺序刷题")
     @RequirePermission("practice:question")
     @GetMapping("/orderList")
-    public ApiResponse<PageResult<QuestionVO>> orderList(@RequestParam(required = false) String questionYear,
+    public ApiResponse<PageResult<QuestionVO>> orderList(@RequestParam(required = false) String questionType,
+                                                     @RequestParam(required = false) String questionYear,
                                                      @RequestParam(required = false) String questionSource,
                                                      @RequestParam(required = false) Integer pageNum,
                                                      @RequestParam(required = false) Integer pageSize) {
-        return ApiResponse.success("查询成功", questionService.orderList(questionYear, questionSource, pageNum, pageSize));
+        return ApiResponse.success("查询成功", questionService.orderList(questionType, questionYear, questionSource, pageNum, pageSize));
     }
 
     /**
@@ -78,17 +80,18 @@ public class PracticeController {
     @Operation(summary = "错题刷题")
     @RequirePermission("practice:question")
     @GetMapping("/wrongList")
-    public ApiResponse<List<QuestionVO>> wrongList(@RequestParam(required = false) String questionYear,
+    public ApiResponse<List<QuestionVO>> wrongList(@RequestParam(required = false) String questionType,
+                                                   @RequestParam(required = false) String questionYear,
                                                    @RequestParam(required = false) String questionSource,
                                                    @RequestParam(required = false) Integer size) {
         Long userId = LoginUserContext.require().getUserId();
-        return ApiResponse.success("查询成功", questionService.wrongList(userId, questionYear, questionSource, size));
+        return ApiResponse.success("查询成功", questionService.wrongList(userId, questionType, questionYear, questionSource, size));
     }
 
     /**
      * 提交答案。
      *
-     * 服务端读取正确答案完成判题，并保存 answer_record。
+     * 服务端读取正确答案完成判题，并保存 ANSWER_RECORD。
      */
     @Operation(summary = "提交答案")
     @RequirePermission("practice:submit")

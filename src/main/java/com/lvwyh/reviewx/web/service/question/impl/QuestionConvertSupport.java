@@ -38,6 +38,7 @@ abstract class QuestionConvertSupport {
     protected QuestionVO toQuestionVO(Question question, boolean includeAnswer, boolean includeImage) {
         QuestionVO vo = new QuestionVO();
         vo.setQuestionId(question.getQuestionId());
+        vo.setQuestionType(question.getQuestionType());
         vo.setQuestionContent(question.getQuestionContent());
         if (includeImage) {
             vo.setQuestionImageBase64(question.getQuestionImageBase64());
