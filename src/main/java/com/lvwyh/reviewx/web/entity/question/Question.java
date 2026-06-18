@@ -2,11 +2,20 @@ package com.lvwyh.reviewx.web.entity.question;
 
 import java.time.LocalDateTime;
 
+/**
+ * 题目实体。
+ *
+ * 映射 question 表，字段与上传 JSON 中的题目内容、选项、答案和来源信息对应。
+ */
 public class Question {
 
+    /** 题目字符串 ID，来自外部题库 JSON。 */
     private String questionId;
+    /** 题干文本。 */
     private String questionContent;
+    /** 题目图片 Base64。 */
     private String questionImageBase64;
+    /** 备选答案 1。 */
     private String option1;
     private String option2;
     private String option3;
@@ -15,13 +24,21 @@ public class Question {
     private String option6;
     private String option7;
     private String option8;
+    /** 正确答案 JSON 数组，例如 ["A","B"]。 */
     private String answerContent;
+    /** 答案来源。 */
     private String answerSource;
+    /** 题目年份。 */
     private String questionYear;
+    /** 题目来源。 */
     private String questionSource;
+    /** 正确率原始文本。 */
     private String correctRate;
+    /** 题目状态：0禁用、1启用。 */
     private Integer questionStatus;
+    /** 创建时间。 */
     private LocalDateTime createdTime;
+    /** 更新时间。 */
     private LocalDateTime updatedTime;
 
     public String getQuestionId() { return questionId; }

@@ -16,6 +16,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * 登录访问上下文服务实现。
+ *
+ * 每次认证通过后都会加载用户状态、角色、权限和 Token 版本，保证权限变更能及时生效。
+ */
 @Service
 public class AccessServiceImpl implements AccessService {
 
@@ -34,6 +39,11 @@ public class AccessServiceImpl implements AccessService {
         this.sysUserTokenVersionMapper = sysUserTokenVersionMapper;
     }
 
+    /**
+     * 加载完整登录用户上下文。
+     *
+     * 如果用户不存在、被删除或禁用，直接返回 401，阻止后续业务执行。
+     */
     @Override
     public LoginUser loadLoginUser(Long userId) {
         SysUser user = sysUserMapper.selectById(userId);
@@ -54,6 +64,9 @@ public class AccessServiceImpl implements AccessService {
         return loginUser;
     }
 
+    /**
+     * 获取 Token 版本；首次登录时自动初始化为 1。
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Integer getTokenVersionOrInit(Long userId) {
@@ -65,6 +78,11 @@ public class AccessServiceImpl implements AccessService {
         return 1;
     }
 
+    /**
+     * Token 版本递增。
+     *
+     * 登出或修改密码后，旧 Token 中的版本号会小于数据库版本号，从而被拦截器拒绝。
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public int bumpTokenVersion(Long userId) {
@@ -76,6 +94,9 @@ public class AccessServiceImpl implements AccessService {
         return next;
     }
 
+    /**
+     * 将数据库查询出的字符串列表转换为去重集合，并过滤空值。
+     */
     private Set<String> toSet(List<String> values) {
         Set<String> result = new HashSet<String>();
         if (values == null) {

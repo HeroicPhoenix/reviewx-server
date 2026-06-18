@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.lvwyh.reviewx.web.mapper.auth.SysRoleApiPermissionMapper">
+    <!-- 新增角色和接口权限绑定关系。 -->
     <insert id="insert">
         INSERT INTO SYS_ROLE_API_PERMISSION (ROLE_ID, API_ID) VALUES (#{roleId}, #{apiId})
     </insert>
 
+    <!-- 判断角色是否已经拥有指定权限，启动初始化时用于幂等处理。 -->
     <select id="countByRoleIdAndApiId" resultType="long">
         SELECT COUNT(1) FROM SYS_ROLE_API_PERMISSION WHERE ROLE_ID = #{roleId} AND API_ID = #{apiId}
     </select>

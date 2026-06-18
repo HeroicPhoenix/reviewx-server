@@ -19,6 +19,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * 认证服务实现。
+ *
+ * 负责用户名密码登录、当前用户信息组装、登出和修改密码。
+ */
 @Service
 public class AuthServiceImpl implements AuthService {
 
@@ -40,6 +45,11 @@ public class AuthServiceImpl implements AuthService {
         this.jwtProperties = jwtProperties;
     }
 
+    /**
+     * 登录入口。
+     *
+     * 校验用户名、用户状态和密码，全部通过后签发 JWT。
+     */
     @Override
     public LoginVO login(String username, String password) {
         SysUser user = sysUserMapper.selectByUsername(username);
@@ -58,6 +68,9 @@ public class AuthServiceImpl implements AuthService {
         return vo;
     }
 
+    /**
+     * 查询当前登录用户信息。
+     */
     @Override
     public MeVO me(Long userId) {
         LoginUser loginUser = accessService.loadLoginUser(userId);
@@ -75,11 +88,19 @@ public class AuthServiceImpl implements AuthService {
         return vo;
     }
 
+    /**
+     * 登出用户。
+     */
     @Override
     public void logout(Long userId) {
         accessService.bumpTokenVersion(userId);
     }
 
+    /**
+     * 修改密码。
+     *
+     * 修改成功后提升 Token 版本，要求用户重新登录。
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void changePassword(Long userId, String oldPassword, String newPassword) {

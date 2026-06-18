@@ -1,14 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.lvwyh.reviewx.web.mapper.auth.SysUserTokenVersionMapper">
+    <!-- 查询用户当前 Token 版本，认证拦截器会用它判断 Token 是否失效。 -->
     <select id="selectByUserId" resultType="com.lvwyh.reviewx.web.entity.auth.SysUserTokenVersion">
         SELECT USER_ID, TOKEN_VERSION FROM SYS_USER_TOKEN_VERSION WHERE USER_ID = #{userId}
     </select>
 
+    <!-- 初始化用户 Token 版本，首次登录或默认管理员初始化时使用。 -->
     <insert id="insert">
         INSERT INTO SYS_USER_TOKEN_VERSION (USER_ID, TOKEN_VERSION) VALUES (#{userId}, #{tokenVersion})
     </insert>
 
+    <!-- 更新 Token 版本；登出或改密后旧 Token 会因版本不一致而失效。 -->
     <update id="updateTokenVersion">
         UPDATE SYS_USER_TOKEN_VERSION SET TOKEN_VERSION = #{tokenVersion} WHERE USER_ID = #{userId}
     </update>

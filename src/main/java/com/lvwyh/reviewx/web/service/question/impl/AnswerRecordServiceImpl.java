@@ -21,10 +21,17 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 答题记录服务实现。
+ *
+ * 负责判题、保存作答记录、查询记录分页和统计当前用户答题表现。
+ */
 @Service
 public class AnswerRecordServiceImpl extends QuestionConvertSupport implements AnswerRecordService {
 
+    /** 题目查询 Mapper，用于提交答案时读取正确答案。 */
     private final QuestionMapper questionMapper;
+    /** 答题记录 Mapper。 */
     private final AnswerRecordMapper answerRecordMapper;
 
     public AnswerRecordServiceImpl(QuestionMapper questionMapper,
@@ -35,6 +42,11 @@ public class AnswerRecordServiceImpl extends QuestionConvertSupport implements A
         this.answerRecordMapper = answerRecordMapper;
     }
 
+    /**
+     * 提交答案并判题。
+     *
+     * 判题时会先把用户答案和正确答案都规范化，再进行集合顺序无关比较。
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public SubmitAnswerVO submitAnswer(Long userId, SubmitAnswerAO ao) {
@@ -77,6 +89,9 @@ public class AnswerRecordServiceImpl extends QuestionConvertSupport implements A
         return vo;
     }
 
+    /**
+     * 分页查询当前用户答题记录。
+     */
     @Override
     public PageResult<AnswerRecordVO> listPage(Long userId, String questionId, Integer isCorrect, LocalDateTime startTime, LocalDateTime endTime, Integer pageNum, Integer pageSize) {
         int validPageNum = pageNum == null || pageNum < 1 ? 1 : pageNum;
@@ -93,6 +108,9 @@ public class AnswerRecordServiceImpl extends QuestionConvertSupport implements A
         return new PageResult<AnswerRecordVO>(total, validPageNum, validPageSize, voList);
     }
 
+    /**
+     * 统计当前用户答题表现。
+     */
     @Override
     public AnswerRecordStatVO stat(Long userId) {
         long total = nullToZero(answerRecordMapper.countTotal(userId));
@@ -107,6 +125,9 @@ public class AnswerRecordServiceImpl extends QuestionConvertSupport implements A
         return vo;
     }
 
+    /**
+     * 空统计值转换为 0。
+     */
     private long nullToZero(Long value) {
         return value == null ? 0L : value;
     }

@@ -21,6 +21,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
 
+/**
+ * 认证接口控制器。
+ *
+ * 提供登录、查询当前用户、登出和修改密码接口。
+ */
 @Tag(name = "认证管理")
 @Validated
 @RestController
@@ -35,6 +40,11 @@ public class AuthController {
         this.authService = authService;
     }
 
+    /**
+     * 登录接口。
+     *
+     * 成功后返回 JWT，后续请求需要携带 Authorization: Bearer <token>。
+     */
     @Operation(summary = "登录并获取JWT")
     @PostMapping("/login")
     public ApiResponse<LoginVO> login(@Valid @RequestBody LoginAO ao) {
@@ -42,6 +52,9 @@ public class AuthController {
         return ApiResponse.success("登录成功", authService.login(ao.getUsername(), ao.getPassword()));
     }
 
+    /**
+     * 查询当前登录用户信息。
+     */
     @Operation(summary = "获取当前登录人信息")
     @RequirePermission("auth:me")
     @GetMapping("/me")
@@ -49,6 +62,11 @@ public class AuthController {
         return ApiResponse.success("查询成功", authService.me(LoginUserContext.require().getUserId()));
     }
 
+    /**
+     * 登出接口。
+     *
+     * 通过提升 Token 版本使当前用户历史 Token 失效。
+     */
     @Operation(summary = "退出登录")
     @RequirePermission("auth:logout")
     @PostMapping("/logout")
@@ -57,6 +75,11 @@ public class AuthController {
         return ApiResponse.success("退出成功", null);
     }
 
+    /**
+     * 修改当前用户密码。
+     *
+     * 修改成功后旧 Token 失效，需要重新登录。
+     */
     @Operation(summary = "修改当前登录用户密码")
     @PostMapping("/changePassword")
     public ApiResponse<Void> changePassword(@Valid @RequestBody ChangePasswordAO ao) {

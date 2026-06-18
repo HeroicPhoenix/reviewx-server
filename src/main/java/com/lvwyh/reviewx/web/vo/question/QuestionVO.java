@@ -5,12 +5,21 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import java.io.Serializable;
 import java.util.List;
 
+/**
+ * 题目返回对象。
+ *
+ * 详情接口会包含答案和图片；刷题接口不会包含答案，避免提前暴露正确答案。
+ */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class QuestionVO implements Serializable {
 
+    /** 题目字符串 ID。 */
     private String questionId;
+    /** 题干内容。 */
     private String questionContent;
+    /** 题目图片 Base64，列表接口通常不返回以减少响应体积。 */
     private String questionImageBase64;
+    /** 备选答案 1。 */
     private String option1;
     private String option2;
     private String option3;
@@ -19,10 +28,15 @@ public class QuestionVO implements Serializable {
     private String option6;
     private String option7;
     private String option8;
+    /** 正确答案列表，仅在允许查看答案的接口中返回。 */
     private List<String> answerContent;
+    /** 答案来源。 */
     private String answerSource;
+    /** 题目年份。 */
     private String questionYear;
+    /** 题目来源。 */
     private String questionSource;
+    /** 题目正确率原始文本。 */
     private String correctRate;
 
     public String getQuestionId() { return questionId; }

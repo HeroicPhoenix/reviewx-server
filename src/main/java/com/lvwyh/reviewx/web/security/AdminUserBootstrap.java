@@ -19,14 +19,28 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
+/**
+ * 默认管理员初始化器。
+ *
+ * 应用启动时自动确保 admin 用户、ADMIN 角色、接口权限码和绑定关系存在，
+ * 这样新环境建表后可以直接使用 admin / 123456 登录。
+ */
 @Component
 public class AdminUserBootstrap implements ApplicationRunner {
 
     private static final Logger log = LogManager.getLogger(AdminUserBootstrap.class);
+    /** 默认管理员用户名。 */
     private static final String ADMIN_USERNAME = "admin";
+    /** 默认管理员初始密码，首次部署后建议立即修改。 */
     private static final String ADMIN_PASSWORD = "123456";
+    /** 默认管理员角色编码。 */
     private static final String ADMIN_ROLE_CODE = "ADMIN";
 
+    /**
+     * 第一版系统内置权限码定义。
+     *
+     * 每一行依次为：权限码、权限名称、接口路径、HTTP 方法。
+     */
     private static final String[][] API_DEFINITIONS = new String[][]{
             {"auth:me", "查询当前登录人", "/api/auth/me", "GET"},
             {"auth:logout", "退出登录", "/api/auth/logout", "POST"},
@@ -61,6 +75,9 @@ public class AdminUserBootstrap implements ApplicationRunner {
         this.passwordEncoder = passwordEncoder;
     }
 
+    /**
+     * Spring Boot 启动完成后执行初始化。
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void run(ApplicationArguments args) {
@@ -73,6 +90,9 @@ public class AdminUserBootstrap implements ApplicationRunner {
         }
     }
 
+    /**
+     * 确保默认管理员用户存在。
+     */
     private SysUser ensureAdminUser() {
         SysUser existed = sysUserMapper.selectByUsername(ADMIN_USERNAME);
         if (existed != null) {
@@ -93,6 +113,9 @@ public class AdminUserBootstrap implements ApplicationRunner {
         return user;
     }
 
+    /**
+     * 确保 ADMIN 角色存在。
+     */
     private SysRole ensureAdminRole() {
         SysRole existed = sysRoleMapper.selectByRoleCode(ADMIN_ROLE_CODE);
         if (existed != null) {
@@ -107,6 +130,9 @@ public class AdminUserBootstrap implements ApplicationRunner {
         return role;
     }
 
+    /**
+     * 确保所有内置权限码存在，并绑定到 ADMIN 角色。
+     */
     private void ensureApiPermissions(Long roleId) {
         for (String[] definition : API_DEFINITIONS) {
             SysApi api = sysApiMapper.selectByApiCode(definition[0]);
@@ -125,6 +151,9 @@ public class AdminUserBootstrap implements ApplicationRunner {
         }
     }
 
+    /**
+     * 确保 admin 用户绑定 ADMIN 角色。
+     */
     private void ensureUserRole(Long userId, Long roleId) {
         if (sysUserRoleMapper.countByUserIdAndRoleId(userId, roleId) == 0) {
             sysUserRoleMapper.insert(userId, roleId);

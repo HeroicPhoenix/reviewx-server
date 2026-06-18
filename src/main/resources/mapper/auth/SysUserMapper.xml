@@ -1,23 +1,28 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.lvwyh.reviewx.web.mapper.auth.SysUserMapper">
+    <!-- SYS_USER 表基础字段清单，供多个查询复用，避免字段遗漏。 -->
     <sql id="Base_Column_List">
         USER_ID, USERNAME, PASSWORD_HASH, NICK_NAME, USER_STATUS, IS_DELETE, IS_ALLOW_ROLE_CHANGE, CREATE_TIME, UPDATE_TIME
     </sql>
 
+    <!-- 新增系统用户；默认管理员初始化时会使用该 SQL，并回填自增主键。 -->
     <insert id="insert" parameterType="com.lvwyh.reviewx.web.entity.auth.SysUser" useGeneratedKeys="true" keyProperty="userId" keyColumn="USER_ID">
         INSERT INTO SYS_USER (USERNAME, PASSWORD_HASH, NICK_NAME, USER_STATUS, IS_DELETE, IS_ALLOW_ROLE_CHANGE, CREATE_TIME, UPDATE_TIME)
         VALUES (#{username}, #{passwordHash}, #{nickName}, #{userStatus}, #{isDelete}, #{isAllowRoleChange}, #{createTime}, #{updateTime})
     </insert>
 
+    <!-- 按用户 ID 查询用户，用于认证上下文加载。 -->
     <select id="selectById" resultType="com.lvwyh.reviewx.web.entity.auth.SysUser">
         SELECT <include refid="Base_Column_List"/> FROM SYS_USER WHERE USER_ID = #{userId} LIMIT 1
     </select>
 
+    <!-- 按用户名查询用户，用于登录校验和默认管理员是否已存在的判断。 -->
     <select id="selectByUsername" resultType="com.lvwyh.reviewx.web.entity.auth.SysUser">
         SELECT <include refid="Base_Column_List"/> FROM SYS_USER WHERE USERNAME = #{username} LIMIT 1
     </select>
 
+    <!-- 更新用户资料或密码哈希；修改密码后会同步更新 UPDATE_TIME。 -->
     <update id="update" parameterType="com.lvwyh.reviewx.web.entity.auth.SysUser">
         UPDATE SYS_USER
         SET PASSWORD_HASH = #{passwordHash}, NICK_NAME = #{nickName}, USER_STATUS = #{userStatus},

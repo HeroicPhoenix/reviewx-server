@@ -14,14 +14,27 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * 题目与答题记录转换支持类。
+ *
+ * 该类集中处理题目 VO 转换、答案 JSON 解析、答案规范化和耗时计算，
+ * 避免 QuestionServiceImpl 与 AnswerRecordServiceImpl 重复实现相同逻辑。
+ */
 abstract class QuestionConvertSupport {
 
+    /** Jackson JSON 工具，用于答案数组和 JSON 字符串互转。 */
     private final ObjectMapper objectMapper;
 
     protected QuestionConvertSupport(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
     }
 
+    /**
+     * 将题目实体转换为接口返回对象。
+     *
+     * @param includeAnswer 是否返回正确答案
+     * @param includeImage 是否返回图片 Base64
+     */
     protected QuestionVO toQuestionVO(Question question, boolean includeAnswer, boolean includeImage) {
         QuestionVO vo = new QuestionVO();
         vo.setQuestionId(question.getQuestionId());
@@ -47,6 +60,9 @@ abstract class QuestionConvertSupport {
         return vo;
     }
 
+    /**
+     * 将答题记录实体转换为接口返回对象。
+     */
     protected AnswerRecordVO toAnswerRecordVO(AnswerRecord record) {
         AnswerRecordVO vo = new AnswerRecordVO();
         vo.setAnswerRecordId(record.getAnswerRecordId());
@@ -60,6 +76,11 @@ abstract class QuestionConvertSupport {
         return vo;
     }
 
+    /**
+     * 解析答案 JSON。
+     *
+     * 数据库存储推荐格式为 ["A","B"]，这里也兼容历史上可能出现的单字符串答案。
+     */
     protected List<String> parseAnswer(String answerJson) {
         if (!StringUtils.hasText(answerJson)) {
             return Collections.emptyList();
@@ -76,6 +97,9 @@ abstract class QuestionConvertSupport {
         }
     }
 
+    /**
+     * 将答案列表序列化为 JSON 字符串。
+     */
     protected String toAnswerJson(List<String> answers) {
         try {
             return objectMapper.writeValueAsString(normalizeAnswers(answers));
@@ -84,6 +108,11 @@ abstract class QuestionConvertSupport {
         }
     }
 
+    /**
+     * 规范化答案。
+     *
+     * 会去除空白、转大写并排序，保证 ["A","B"] 和 ["B","A"] 判为一致。
+     */
     protected List<String> normalizeAnswers(List<String> answers) {
         List<String> result = new ArrayList<String>();
         if (answers != null) {
@@ -97,6 +126,9 @@ abstract class QuestionConvertSupport {
         return result;
     }
 
+    /**
+     * 计算作答耗时，单位毫秒。
+     */
     protected Long durationMs(java.time.LocalDateTime startTime, java.time.LocalDateTime endTime) {
         if (startTime == null || endTime == null) {
             return 0L;

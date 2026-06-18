@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.lvwyh.reviewx.web.mapper.auth.SysRoleMapper">
+    <!-- 新增角色；启动初始化 ADMIN 角色时使用。 -->
     <insert id="insert" parameterType="com.lvwyh.reviewx.web.entity.auth.SysRole" useGeneratedKeys="true" keyProperty="roleId" keyColumn="ROLE_ID">
         INSERT INTO SYS_ROLE (ROLE_CODE, ROLE_NAME, ROLE_STATUS, IS_DELETE)
         VALUES (#{roleCode}, #{roleName}, #{roleStatus}, #{isDelete})
     </insert>
 
+    <!-- 按角色编码查询角色，避免重复创建 ADMIN。 -->
     <select id="selectByRoleCode" resultType="com.lvwyh.reviewx.web.entity.auth.SysRole">
         SELECT ROLE_ID, ROLE_CODE, ROLE_NAME, ROLE_STATUS, IS_DELETE
         FROM SYS_ROLE
@@ -13,6 +15,7 @@
         LIMIT 1
     </select>
 
+    <!-- 查询用户拥有的角色编码，写入 LoginUserContext。 -->
     <select id="selectRoleCodesByUserId" resultType="string">
         SELECT r.ROLE_CODE
         FROM SYS_ROLE r

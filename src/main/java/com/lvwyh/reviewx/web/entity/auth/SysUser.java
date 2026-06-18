@@ -2,16 +2,30 @@ package com.lvwyh.reviewx.web.entity.auth;
 
 import java.time.LocalDateTime;
 
+/**
+ * 系统用户实体。
+ *
+ * 映射 SYS_USER 表，用于登录认证、用户状态校验和默认管理员初始化。
+ */
 public class SysUser {
 
+    /** 用户主键。 */
     private Long userId;
+    /** 登录用户名。 */
     private String username;
+    /** BCrypt 密码哈希。 */
     private String passwordHash;
+    /** 昵称。 */
     private String nickName;
+    /** 用户状态：1正常、2禁用、3逻辑删除。 */
     private Integer userStatus;
+    /** 是否允许删除：0不允许、1允许。 */
     private Integer isDelete;
+    /** 是否允许修改角色：0不允许、1允许。 */
     private Integer isAllowRoleChange;
+    /** 创建时间。 */
     private LocalDateTime createTime;
+    /** 更新时间。 */
     private LocalDateTime updateTime;
 
     public Long getUserId() { return userId; }

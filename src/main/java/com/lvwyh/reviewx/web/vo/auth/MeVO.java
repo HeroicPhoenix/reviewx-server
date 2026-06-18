@@ -4,12 +4,22 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 当前登录用户信息返回对象。
+ *
+ * 用于前端初始化登录态、展示用户信息以及判断可用权限。
+ */
 public class MeVO implements Serializable {
 
+    /** 用户主键。 */
     private Long userId;
+    /** 登录用户名。 */
     private String username;
+    /** 用户昵称。 */
     private String nickName;
+    /** 用户角色编码列表。 */
     private List<String> roles = new ArrayList<String>();
+    /** 用户接口权限编码列表。 */
     private List<String> permissions = new ArrayList<String>();
 
     public Long getUserId() { return userId; }

@@ -18,6 +18,11 @@ import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 
+/**
+ * JWT Token 服务实现。
+ *
+ * 使用 HMAC-SHA256 签名，Token 中只存用户 ID、用户名和 Token 版本。
+ */
 @Service
 public class JwtTokenServiceImpl implements TokenService {
 
@@ -32,6 +37,11 @@ public class JwtTokenServiceImpl implements TokenService {
         this.jwtProperties = jwtProperties;
     }
 
+    /**
+     * 初始化签名密钥。
+     *
+     * 服务启动时执行，密钥缺失时直接启动失败，避免服务在不安全配置下运行。
+     */
     @PostConstruct
     public void init() {
         if (!StringUtils.hasText(jwtProperties.getSecret())) {
@@ -40,6 +50,9 @@ public class JwtTokenServiceImpl implements TokenService {
         this.key = Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8));
     }
 
+    /**
+     * 生成 JWT 字符串。
+     */
     @Override
     public String generate(Long userId, String username, Integer tokenVersion) {
         long now = System.currentTimeMillis();
@@ -54,6 +67,11 @@ public class JwtTokenServiceImpl implements TokenService {
                 .compact();
     }
 
+    /**
+     * 解析并校验 JWT。
+     *
+     * 签名错误、过期、格式非法都会统一转换为 401 业务异常。
+     */
     @Override
     public TokenClaims parse(String token) {
         try {

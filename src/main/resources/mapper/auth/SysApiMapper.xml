@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.lvwyh.reviewx.web.mapper.auth.SysApiMapper">
+    <!-- 新增接口权限码；启动初始化内置权限时使用。 -->
     <insert id="insert" parameterType="com.lvwyh.reviewx.web.entity.auth.SysApi" useGeneratedKeys="true" keyProperty="apiId" keyColumn="API_ID">
         INSERT INTO SYS_API (API_CODE, API_NAME, API_PATH, HTTP_METHOD, STATUS)
         VALUES (#{apiCode}, #{apiName}, #{apiPath}, #{httpMethod}, #{status})
     </insert>
 
+    <!-- 按权限编码查询接口权限，避免重复初始化。 -->
     <select id="selectByApiCode" resultType="com.lvwyh.reviewx.web.entity.auth.SysApi">
         SELECT API_ID, API_CODE, API_NAME, API_PATH, HTTP_METHOD, STATUS
         FROM SYS_API
@@ -13,6 +15,7 @@
         LIMIT 1
     </select>
 
+    <!-- 查询用户拥有的权限编码，供 PermissionInterceptor 校验。 -->
     <select id="selectPermissionCodesByUserId" resultType="string">
         SELECT a.API_CODE
         FROM SYS_API a

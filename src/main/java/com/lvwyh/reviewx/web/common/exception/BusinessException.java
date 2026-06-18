@@ -1,14 +1,22 @@
 package com.lvwyh.reviewx.web.common.exception;
 
 /**
- * 业务异常
+ * 业务异常。
  *
- * 说明：
- * 1. 只用于业务规则错误
- * 2. 不用于系统异常（NPE、SQL异常等）
+ * 只用于可预期的业务失败，例如未登录、无权限、资源不存在、参数不符合业务规则。
+ * 不用于包装空指针、SQL 异常等系统错误，系统错误统一交给兜底异常处理。
  */
 public class BusinessException extends RuntimeException {
 
+    /**
+     * 业务错误码。
+     *
+     * 约定：
+     * 400 表示普通业务错误；
+     * 401 表示未登录或登录失效；
+     * 403 表示无权限；
+     * 404 表示资源不存在。
+     */
     private final int code;
 
     /**
@@ -43,6 +51,9 @@ public class BusinessException extends RuntimeException {
         this.code = code;
     }
 
+    /**
+     * 获取业务错误码，供全局异常处理器组装统一响应。
+     */
     public int getCode() {
         return code;
     }

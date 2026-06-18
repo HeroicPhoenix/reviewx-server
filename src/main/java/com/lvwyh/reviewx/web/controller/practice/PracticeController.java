@@ -24,6 +24,11 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.validation.Valid;
 import java.util.List;
 
+/**
+ * 刷题控制器。
+ *
+ * 负责三种取题方式和提交答案；取题接口不返回正确答案。
+ */
 @Tag(name = "刷题")
 @Validated
 @RestController
@@ -40,6 +45,9 @@ public class PracticeController {
         this.answerRecordService = answerRecordService;
     }
 
+    /**
+     * 随机取题。
+     */
     @Operation(summary = "随机刷题")
     @RequirePermission("practice:question")
     @GetMapping("/randomList")
@@ -49,6 +57,9 @@ public class PracticeController {
         return ApiResponse.success("查询成功", questionService.randomList(questionYear, questionSource, size));
     }
 
+    /**
+     * 顺序分页取题。
+     */
     @Operation(summary = "顺序刷题")
     @RequirePermission("practice:question")
     @GetMapping("/orderList")
@@ -59,6 +70,11 @@ public class PracticeController {
         return ApiResponse.success("查询成功", questionService.orderList(questionYear, questionSource, pageNum, pageSize));
     }
 
+    /**
+     * 错题随机取题。
+     *
+     * 只查询当前登录用户历史答错过的题目。
+     */
     @Operation(summary = "错题刷题")
     @RequirePermission("practice:question")
     @GetMapping("/wrongList")
@@ -69,6 +85,11 @@ public class PracticeController {
         return ApiResponse.success("查询成功", questionService.wrongList(userId, questionYear, questionSource, size));
     }
 
+    /**
+     * 提交答案。
+     *
+     * 服务端读取正确答案完成判题，并保存 answer_record。
+     */
     @Operation(summary = "提交答案")
     @RequirePermission("practice:submit")
     @PostMapping("/submitAnswer")

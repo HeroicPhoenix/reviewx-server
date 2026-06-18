@@ -17,6 +17,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.constraints.NotBlank;
 
+/**
+ * 题目查询控制器。
+ *
+ * 只提供查看和搜索能力，不负责题目录入或维护。
+ */
 @Tag(name = "题目管理")
 @Validated
 @RestController
@@ -31,6 +36,11 @@ public class QuestionController {
         this.questionService = questionService;
     }
 
+    /**
+     * 查看题目详情。
+     *
+     * 该接口属于查看模式，会返回正确答案和题目图片。
+     */
     @Operation(summary = "查看题目详情")
     @RequirePermission("question:view")
     @GetMapping("/detail")
@@ -39,6 +49,11 @@ public class QuestionController {
         return ApiResponse.success("查询成功", questionService.detail(questionId));
     }
 
+    /**
+     * 搜索题目。
+     *
+     * 支持关键词、年份和来源过滤；列表不返回图片 Base64。
+     */
     @Operation(summary = "搜索题目")
     @RequirePermission("question:search")
     @GetMapping("/search")
