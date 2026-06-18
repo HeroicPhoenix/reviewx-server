@@ -94,7 +94,16 @@
     <select id="selectRandom" resultType="com.lvwyh.reviewx.web.entity.question.Question">
         SELECT <include refid="Base_Column_List"/>
         FROM QUESTION
-        WHERE <include refid="Search_Where"/>
+        WHERE QUESTION_STATUS = 1
+        <if test="questionType != null and questionType != ''">
+            AND QUESTION_TYPE = #{questionType}
+        </if>
+        <if test="questionYear != null and questionYear != ''">
+            AND QUESTION_YEAR = #{questionYear}
+        </if>
+        <if test="questionSource != null and questionSource != ''">
+            AND QUESTION_SOURCE = #{questionSource}
+        </if>
         ORDER BY RAND()
         LIMIT #{size}
     </select>
@@ -103,7 +112,16 @@
     <select id="selectOrder" resultType="com.lvwyh.reviewx.web.entity.question.Question">
         SELECT <include refid="Base_Column_List"/>
         FROM QUESTION
-        WHERE <include refid="Search_Where"/>
+        WHERE QUESTION_STATUS = 1
+        <if test="questionType != null and questionType != ''">
+            AND QUESTION_TYPE = #{questionType}
+        </if>
+        <if test="questionYear != null and questionYear != ''">
+            AND QUESTION_YEAR = #{questionYear}
+        </if>
+        <if test="questionSource != null and questionSource != ''">
+            AND QUESTION_SOURCE = #{questionSource}
+        </if>
         ORDER BY QUESTION_ID ASC
         LIMIT #{offset}, #{pageSize}
     </select>

@@ -14,10 +14,13 @@ import org.springframework.util.StringUtils;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.Enumeration;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
+import java.util.zip.ZipFile;
 
 /**
  * 题目导入服务实现。
@@ -45,18 +48,29 @@ public class QuestionImportServiceImpl implements QuestionImportService {
             throw new BusinessException(404, "题目导入文件不存在：" + DEFAULT_ZIP_PATH);
         }
 
+        try {
+            return importZipWithCharset(zipFile, StandardCharsets.UTF_8);
+        } catch (IllegalArgumentException e) {
+            return importZipWithCharset(zipFile, Charset.forName("GBK"));
+        }
+    }
+
+    private QuestionImportResultVO importZipWithCharset(File zipFile, Charset charset) {
         QuestionImportResultVO result = new QuestionImportResultVO();
-        try (ZipInputStream zipInputStream = new ZipInputStream(new java.io.FileInputStream(zipFile), StandardCharsets.UTF_8)) {
-            ZipEntry entry;
-            while ((entry = zipInputStream.getNextEntry()) != null) {
+        try (ZipFile zip = new ZipFile(zipFile, charset)) {
+            Enumeration<? extends ZipEntry> entries = zip.entries();
+            while (entries.hasMoreElements()) {
+                ZipEntry entry = entries.nextElement();
                 if (entry.isDirectory() || !entry.getName().endsWith(".json") || shouldSkip(entry.getName())) {
                     continue;
                 }
                 result.increaseTotalFileCount();
-                importJsonFile(entry.getName(), readEntry(zipInputStream), result);
+                try (InputStream inputStream = zip.getInputStream(entry)) {
+                    importJsonFile(entry.getName(), readEntry(inputStream), result);
+                }
             }
         } catch (IOException e) {
-            throw new BusinessException(500, "读取题目导入文件失败", e);
+            throw new BusinessException(500, "读取题目导入文件失败：" + charset.name() + " " + e.getMessage(), e);
         }
         return result;
     }
@@ -151,11 +165,11 @@ public class QuestionImportServiceImpl implements QuestionImportService {
     /**
      * 读取当前 zip entry 的全部字节。
      */
-    private byte[] readEntry(ZipInputStream zipInputStream) throws IOException {
+    private byte[] readEntry(InputStream inputStream) throws IOException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         byte[] buffer = new byte[4096];
         int len;
-        while ((len = zipInputStream.read(buffer)) != -1) {
+        while ((len = inputStream.read(buffer)) != -1) {
             outputStream.write(buffer, 0, len);
         }
         return outputStream.toByteArray();
