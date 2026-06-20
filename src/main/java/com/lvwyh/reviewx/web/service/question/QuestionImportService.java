@@ -1,11 +1,12 @@
 package com.lvwyh.reviewx.web.service.question;
 
 import com.lvwyh.reviewx.web.vo.question.QuestionImportResultVO;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface QuestionImportService {
 
     /**
-     * 从 docs/识别结果id输出.zip 导入题目。
+     * 从上传的 zip 文件导入题目。
      */
-    QuestionImportResultVO importFromDocsZip();
+    QuestionImportResultVO importFromZip(MultipartFile file);
 }

@@ -10,6 +10,7 @@ import com.lvwyh.reviewx.web.vo.question.QuestionImportFailureVO;
 import com.lvwyh.reviewx.web.vo.question.QuestionImportResultVO;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -19,18 +20,18 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Enumeration;
+import java.util.Locale;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 /**
  * 题目导入服务实现。
  *
- * 从固定 zip 文件中读取各题型目录下的 JSON 文件，logs 目录会被跳过。
+ * 从上传 zip 文件中读取各题型目录下的 JSON 文件，logs 目录会被跳过。
  */
 @Service
 public class QuestionImportServiceImpl implements QuestionImportService {
 
-    private static final String DEFAULT_ZIP_PATH = "docs/识别结果id输出.zip";
     private static final String LOGS_DIR_NAME = "logs";
 
     private final QuestionMapper questionMapper;
@@ -42,12 +43,31 @@ public class QuestionImportServiceImpl implements QuestionImportService {
     }
 
     @Override
-    public QuestionImportResultVO importFromDocsZip() {
-        File zipFile = new File(DEFAULT_ZIP_PATH);
-        if (!zipFile.exists() || !zipFile.isFile()) {
-            throw new BusinessException(404, "题目导入文件不存在：" + DEFAULT_ZIP_PATH);
+    public QuestionImportResultVO importFromZip(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new BusinessException(400, "请选择要导入的 zip 文件");
         }
 
+        String fileName = file.getOriginalFilename();
+        if (!StringUtils.hasText(fileName) || !fileName.toLowerCase(Locale.ROOT).endsWith(".zip")) {
+            throw new BusinessException(400, "仅支持上传 zip 文件");
+        }
+
+        File tempFile = null;
+        try {
+            tempFile = File.createTempFile("reviewx-question-import-", ".zip");
+            file.transferTo(tempFile);
+            return importZipFile(tempFile);
+        } catch (IOException e) {
+            throw new BusinessException(500, "保存上传 zip 文件失败：" + e.getMessage(), e);
+        } finally {
+            if (tempFile != null && tempFile.exists() && !tempFile.delete()) {
+                tempFile.deleteOnExit();
+            }
+        }
+    }
+
+    private QuestionImportResultVO importZipFile(File zipFile) {
         try {
             return importZipWithCharset(zipFile, StandardCharsets.UTF_8);
         } catch (IllegalArgumentException e) {

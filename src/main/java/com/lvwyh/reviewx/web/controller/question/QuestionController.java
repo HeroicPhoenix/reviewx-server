@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.constraints.NotBlank;
 import java.util.List;
@@ -85,15 +86,15 @@ public class QuestionController {
     }
 
     /**
-     * 从 docs/识别结果id输出.zip 导入题目。
+     * 从上传 zip 导入题目。
      *
      * 导入时会跳过 logs 目录，并将其它一级目录名作为题目类型。
      */
-    @Operation(summary = "从docs目录zip导入题目")
+    @Operation(summary = "上传zip导入题目")
     @RequirePermission("question:import")
     @PostMapping("/importFromDocsZip")
-    public ApiResponse<QuestionImportResultVO> importFromDocsZip() {
-        log.info("Question import from docs zip request");
-        return ApiResponse.success("导入完成", questionImportService.importFromDocsZip());
+    public ApiResponse<QuestionImportResultVO> importFromDocsZip(@RequestParam("file") MultipartFile file) {
+        log.info("Question import zip upload request: filename={}, size={}", file.getOriginalFilename(), file.getSize());
+        return ApiResponse.success("导入完成", questionImportService.importFromZip(file));
     }
 }
