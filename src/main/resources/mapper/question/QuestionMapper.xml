@@ -90,6 +90,17 @@
         WHERE <include refid="Search_Where"/>
     </select>
 
+    <!-- 按题目类型分组，用于前端题型下拉选项。 -->
+    <select id="selectQuestionTypes" resultType="string">
+        SELECT QUESTION_TYPE
+        FROM QUESTION
+        WHERE QUESTION_STATUS = 1
+          AND QUESTION_TYPE IS NOT NULL
+          AND QUESTION_TYPE != ''
+        GROUP BY QUESTION_TYPE
+        ORDER BY QUESTION_TYPE ASC
+    </select>
+
     <!-- 随机抽题，用于普通随机练习。 -->
     <select id="selectRandom" resultType="com.lvwyh.reviewx.web.entity.question.Question">
         SELECT <include refid="Base_Column_List"/>

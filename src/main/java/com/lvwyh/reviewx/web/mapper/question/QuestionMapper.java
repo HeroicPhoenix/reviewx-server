@@ -34,6 +34,9 @@ public interface QuestionMapper {
                      @Param("questionYear") String questionYear,
                      @Param("questionSource") String questionSource);
 
+    /** 按题目类型分组查询启用题目的题型列表。 */
+    List<String> selectQuestionTypes();
+
     /** 随机抽取题目。 */
     List<Question> selectRandom(@Param("questionType") String questionType,
                                 @Param("questionYear") String questionYear,

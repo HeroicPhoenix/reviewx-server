@@ -58,6 +58,14 @@ public class QuestionServiceImpl extends QuestionConvertSupport implements Quest
     }
 
     /**
+     * 查询题型下拉选项。
+     */
+    @Override
+    public List<String> questionTypes() {
+        return questionMapper.selectQuestionTypes();
+    }
+
+    /**
      * 随机取题。
      *
      * 用于普通练习模式，不返回正确答案。

@@ -18,6 +18,9 @@ public interface QuestionService {
     /** 搜索题目，返回分页结果。 */
     PageResult<QuestionVO> search(String keyword, String questionType, String questionYear, String questionSource, Integer pageNum, Integer pageSize);
 
+    /** 查询启用题目的题型下拉列表。 */
+    List<String> questionTypes();
+
     /** 随机抽题，不返回正确答案。 */
     List<QuestionVO> randomList(String questionType, String questionYear, String questionSource, Integer size);
 

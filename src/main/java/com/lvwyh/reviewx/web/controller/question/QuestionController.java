@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.constraints.NotBlank;
+import java.util.List;
 
 /**
  * 题目查询控制器。
@@ -71,6 +72,16 @@ public class QuestionController {
                                                   @RequestParam(required = false) Integer pageSize) {
         log.info("Question search request: keyword={}, questionType={}, questionYear={}, questionSource={}", keyword, questionType, questionYear, questionSource);
         return ApiResponse.success("查询成功", questionService.search(keyword, questionType, questionYear, questionSource, pageNum, pageSize));
+    }
+
+    /**
+     * 查询题型下拉选项。
+     */
+    @Operation(summary = "按题型分组查询")
+    @RequirePermission("question:search")
+    @GetMapping("/typeList")
+    public ApiResponse<List<String>> typeList() {
+        return ApiResponse.success("查询成功", questionService.questionTypes());
     }
 
     /**
