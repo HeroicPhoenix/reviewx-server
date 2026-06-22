@@ -55,7 +55,8 @@ public class PracticeController {
                                                     @RequestParam(required = false) String questionYear,
                                                     @RequestParam(required = false) String questionSource,
                                                     @RequestParam(required = false) Integer size) {
-        return ApiResponse.success("查询成功", questionService.randomList(questionType, questionYear, questionSource, size));
+        Long userId = LoginUserContext.require().getUserId();
+        return ApiResponse.success("查询成功", questionService.randomList(userId, questionType, questionYear, questionSource, size));
     }
 
     /**
@@ -69,7 +70,8 @@ public class PracticeController {
                                                      @RequestParam(required = false) String questionSource,
                                                      @RequestParam(required = false) Integer pageNum,
                                                      @RequestParam(required = false) Integer pageSize) {
-        return ApiResponse.success("查询成功", questionService.orderList(questionType, questionYear, questionSource, pageNum, pageSize));
+        Long userId = LoginUserContext.require().getUserId();
+        return ApiResponse.success("查询成功", questionService.orderList(userId, questionType, questionYear, questionSource, pageNum, pageSize));
     }
 
     /**

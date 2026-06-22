@@ -4,6 +4,8 @@ import com.lvwyh.reviewx.web.entity.auth.SysUser;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.util.List;
+
 /**
  * 系统用户 Mapper。
  *
@@ -20,6 +22,9 @@ public interface SysUserMapper {
 
     /** 按登录用户名查询用户，用于登录和唯一性判断。 */
     SysUser selectByUsername(@Param("username") String username);
+
+    /** 查询未逻辑删除的用户列表。 */
+    List<SysUser> selectActiveUsers();
 
     /** 更新用户基础信息和密码哈希。 */
     int update(SysUser user);

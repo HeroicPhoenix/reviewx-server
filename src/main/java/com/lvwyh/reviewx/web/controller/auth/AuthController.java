@@ -81,6 +81,7 @@ public class AuthController {
      * 修改成功后旧 Token 失效，需要重新登录。
      */
     @Operation(summary = "修改当前登录用户密码")
+    @RequirePermission("auth:change-password")
     @PostMapping("/changePassword")
     public ApiResponse<Void> changePassword(@Valid @RequestBody ChangePasswordAO ao) {
         authService.changePassword(LoginUserContext.require().getUserId(), ao.getOldPassword(), ao.getNewPassword());

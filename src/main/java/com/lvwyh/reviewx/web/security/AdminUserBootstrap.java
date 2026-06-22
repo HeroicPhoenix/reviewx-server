@@ -35,6 +35,8 @@ public class AdminUserBootstrap implements ApplicationRunner {
     private static final String ADMIN_PASSWORD = "123456";
     /** 默认管理员角色编码。 */
     private static final String ADMIN_ROLE_CODE = "ADMIN";
+    /** 默认普通用户角色编码。 */
+    private static final String NORMAL_ROLE_CODE = "USER";
 
     /**
      * 第一版系统内置权限码定义。
@@ -44,12 +46,29 @@ public class AdminUserBootstrap implements ApplicationRunner {
     private static final String[][] API_DEFINITIONS = new String[][]{
             {"auth:me", "查询当前登录人", "/api/auth/me", "GET"},
             {"auth:logout", "退出登录", "/api/auth/logout", "POST"},
+            {"auth:change-password", "修改密码", "/api/auth/changePassword", "POST"},
             {"question:view", "查看题目", "/api/question/detail", "GET"},
             {"question:search", "搜索题目", "/api/question/search", "GET"},
             {"question:import", "导入题目", "/api/question/importFromDocsZip", "POST"},
             {"practice:question", "刷题取题", "/api/practice/**", "GET"},
             {"practice:submit", "提交答案", "/api/practice/submitAnswer", "POST"},
-            {"answer-record:view", "查看答题记录", "/api/answerRecord/**", "GET"}
+            {"answer-record:view", "查看答题记录", "/api/answerRecord/**", "GET"},
+            {"user:manage", "管理用户", "/api/user/**", "*"}
+    };
+
+    /**
+     * 普通用户默认拥有的权限码。
+     */
+    private static final String[] NORMAL_USER_API_CODES = new String[]{
+            "auth:me",
+            "auth:logout",
+            "auth:change-password",
+            "question:view",
+            "question:search",
+            "question:import",
+            "practice:question",
+            "practice:submit",
+            "answer-record:view"
     };
 
     private final SysUserMapper sysUserMapper;
@@ -82,10 +101,11 @@ public class AdminUserBootstrap implements ApplicationRunner {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void run(ApplicationArguments args) {
-        SysRole role = ensureAdminRole();
-        ensureApiPermissions(role.getRoleId());
+        SysRole adminRole = ensureRole(ADMIN_ROLE_CODE, "系统管理员", 0);
+        SysRole normalRole = ensureRole(NORMAL_ROLE_CODE, "普通用户", 0);
+        ensureApiPermissions(adminRole.getRoleId(), normalRole.getRoleId());
         SysUser user = ensureAdminUser();
-        ensureUserRole(user.getUserId(), role.getRoleId());
+        ensureUserRole(user.getUserId(), adminRole.getRoleId());
         if (sysUserTokenVersionMapper.selectByUserId(user.getUserId()) == null) {
             sysUserTokenVersionMapper.insert(user.getUserId(), 1);
         }
@@ -117,16 +137,16 @@ public class AdminUserBootstrap implements ApplicationRunner {
     /**
      * 确保 ADMIN 角色存在。
      */
-    private SysRole ensureAdminRole() {
-        SysRole existed = sysRoleMapper.selectByRoleCode(ADMIN_ROLE_CODE);
+    private SysRole ensureRole(String roleCode, String roleName, Integer isDelete) {
+        SysRole existed = sysRoleMapper.selectByRoleCode(roleCode);
         if (existed != null) {
             return existed;
         }
         SysRole role = new SysRole();
-        role.setRoleCode(ADMIN_ROLE_CODE);
-        role.setRoleName("系统管理员");
+        role.setRoleCode(roleCode);
+        role.setRoleName(roleName);
         role.setRoleStatus(1);
-        role.setIsDelete(0);
+        role.setIsDelete(isDelete);
         sysRoleMapper.insert(role);
         return role;
     }
@@ -134,7 +154,7 @@ public class AdminUserBootstrap implements ApplicationRunner {
     /**
      * 确保所有内置权限码存在，并绑定到 ADMIN 角色。
      */
-    private void ensureApiPermissions(Long roleId) {
+    private void ensureApiPermissions(Long adminRoleId, Long normalRoleId) {
         for (String[] definition : API_DEFINITIONS) {
             SysApi api = sysApiMapper.selectByApiCode(definition[0]);
             if (api == null) {
@@ -146,10 +166,23 @@ public class AdminUserBootstrap implements ApplicationRunner {
                 api.setStatus(1);
                 sysApiMapper.insert(api);
             }
-            if (sysRoleApiPermissionMapper.countByRoleIdAndApiId(roleId, api.getApiId()) == 0) {
-                sysRoleApiPermissionMapper.insert(roleId, api.getApiId());
+            if (sysRoleApiPermissionMapper.countByRoleIdAndApiId(adminRoleId, api.getApiId()) == 0) {
+                sysRoleApiPermissionMapper.insert(adminRoleId, api.getApiId());
+            }
+            if (isNormalUserApi(definition[0])
+                    && sysRoleApiPermissionMapper.countByRoleIdAndApiId(normalRoleId, api.getApiId()) == 0) {
+                sysRoleApiPermissionMapper.insert(normalRoleId, api.getApiId());
             }
         }
+    }
+
+    private boolean isNormalUserApi(String apiCode) {
+        for (String normalUserApiCode : NORMAL_USER_API_CODES) {
+            if (normalUserApiCode.equals(apiCode)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

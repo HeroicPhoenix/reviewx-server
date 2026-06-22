@@ -34,8 +34,8 @@ public class QuestionServiceImpl extends QuestionConvertSupport implements Quest
      * 该接口属于“查看题目”，因此返回正确答案和图片。
      */
     @Override
-    public QuestionVO detail(String questionId) {
-        Question question = questionMapper.selectById(questionId);
+    public QuestionVO detail(Long userId, String questionId) {
+        Question question = questionMapper.selectById(userId, questionId);
         if (question == null) {
             throw new BusinessException(404, "题目不存在");
         }
@@ -48,21 +48,21 @@ public class QuestionServiceImpl extends QuestionConvertSupport implements Quest
      * 列表不返回图片 Base64，避免大字段拖慢分页接口。
      */
     @Override
-    public PageResult<QuestionVO> search(String keyword, String questionType, String questionYear, String questionSource, Integer pageNum, Integer pageSize) {
+    public PageResult<QuestionVO> search(Long userId, String keyword, String questionType, String questionYear, String questionSource, Integer pageNum, Integer pageSize) {
         int validPageNum = validPageNum(pageNum);
         int validPageSize = validPageSize(pageSize);
         int offset = (validPageNum - 1) * validPageSize;
-        long total = questionMapper.countSearch(keyword, questionType, questionYear, questionSource);
+        long total = questionMapper.countSearch(userId, keyword, questionType, questionYear, questionSource);
         return new PageResult<QuestionVO>(total, validPageNum, validPageSize,
-                toQuestionVOList(questionMapper.search(keyword, questionType, questionYear, questionSource, offset, validPageSize), true, false));
+                toQuestionVOList(questionMapper.search(userId, keyword, questionType, questionYear, questionSource, offset, validPageSize), true, false));
     }
 
     /**
      * 查询题型下拉选项。
      */
     @Override
-    public List<String> questionTypes() {
-        return questionMapper.selectQuestionTypes();
+    public List<String> questionTypes(Long userId) {
+        return questionMapper.selectQuestionTypes(userId);
     }
 
     /**
@@ -71,8 +71,8 @@ public class QuestionServiceImpl extends QuestionConvertSupport implements Quest
      * 用于普通练习模式，不返回正确答案。
      */
     @Override
-    public List<QuestionVO> randomList(String questionType, String questionYear, String questionSource, Integer size) {
-        return toQuestionVOList(questionMapper.selectRandom(questionType, questionYear, questionSource, validSize(size)), false, true);
+    public List<QuestionVO> randomList(Long userId, String questionType, String questionYear, String questionSource, Integer size) {
+        return toQuestionVOList(questionMapper.selectRandom(userId, questionType, questionYear, questionSource, validSize(size)), false, true);
     }
 
     /**
@@ -81,13 +81,13 @@ public class QuestionServiceImpl extends QuestionConvertSupport implements Quest
      * 用于按题库顺序刷题，不返回正确答案。
      */
     @Override
-    public PageResult<QuestionVO> orderList(String questionType, String questionYear, String questionSource, Integer pageNum, Integer pageSize) {
+    public PageResult<QuestionVO> orderList(Long userId, String questionType, String questionYear, String questionSource, Integer pageNum, Integer pageSize) {
         int validPageNum = validPageNum(pageNum);
         int validPageSize = validPageSize(pageSize);
         int offset = (validPageNum - 1) * validPageSize;
-        long total = questionMapper.countSearch(null, questionType, questionYear, questionSource);
+        long total = questionMapper.countSearch(userId, null, questionType, questionYear, questionSource);
         return new PageResult<QuestionVO>(total, validPageNum, validPageSize,
-                toQuestionVOList(questionMapper.selectOrder(questionType, questionYear, questionSource, offset, validPageSize), false, true));
+                toQuestionVOList(questionMapper.selectOrder(userId, questionType, questionYear, questionSource, offset, validPageSize), false, true));
     }
 
     /**

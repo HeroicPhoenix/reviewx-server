@@ -43,7 +43,10 @@ public class QuestionImportServiceImpl implements QuestionImportService {
     }
 
     @Override
-    public QuestionImportResultVO importFromZip(MultipartFile file) {
+    public QuestionImportResultVO importFromZip(Long userId, MultipartFile file) {
+        if (userId == null) {
+            throw new BusinessException(401, "登录状态已失效");
+        }
         if (file == null || file.isEmpty()) {
             throw new BusinessException(400, "请选择要导入的 zip 文件");
         }
@@ -57,7 +60,7 @@ public class QuestionImportServiceImpl implements QuestionImportService {
         try {
             tempFile = File.createTempFile("reviewx-question-import-", ".zip");
             file.transferTo(tempFile);
-            return importZipFile(tempFile);
+            return importZipFile(userId, tempFile);
         } catch (IOException e) {
             throw new BusinessException(500, "保存上传 zip 文件失败：" + e.getMessage(), e);
         } finally {
@@ -67,15 +70,15 @@ public class QuestionImportServiceImpl implements QuestionImportService {
         }
     }
 
-    private QuestionImportResultVO importZipFile(File zipFile) {
+    private QuestionImportResultVO importZipFile(Long userId, File zipFile) {
         try {
-            return importZipWithCharset(zipFile, StandardCharsets.UTF_8);
+            return importZipWithCharset(userId, zipFile, StandardCharsets.UTF_8);
         } catch (IllegalArgumentException e) {
-            return importZipWithCharset(zipFile, Charset.forName("GBK"));
+            return importZipWithCharset(userId, zipFile, Charset.forName("GBK"));
         }
     }
 
-    private QuestionImportResultVO importZipWithCharset(File zipFile, Charset charset) {
+    private QuestionImportResultVO importZipWithCharset(Long userId, File zipFile, Charset charset) {
         QuestionImportResultVO result = new QuestionImportResultVO();
         try (ZipFile zip = new ZipFile(zipFile, charset)) {
             Enumeration<? extends ZipEntry> entries = zip.entries();
@@ -86,7 +89,7 @@ public class QuestionImportServiceImpl implements QuestionImportService {
                 }
                 result.increaseTotalFileCount();
                 try (InputStream inputStream = zip.getInputStream(entry)) {
-                    importJsonFile(entry.getName(), readEntry(inputStream), result);
+                    importJsonFile(userId, entry.getName(), readEntry(inputStream), result);
                 }
             }
         } catch (IOException e) {
@@ -98,7 +101,7 @@ public class QuestionImportServiceImpl implements QuestionImportService {
     /**
      * 导入单个 JSON 文件中的全部题目。
      */
-    private void importJsonFile(String fileName, byte[] content, QuestionImportResultVO result) {
+    private void importJsonFile(Long userId, String fileName, byte[] content, QuestionImportResultVO result) {
         String questionType = resolveQuestionType(fileName);
         try {
             JsonNode root = objectMapper.readTree(content);
@@ -110,7 +113,7 @@ public class QuestionImportServiceImpl implements QuestionImportService {
             for (JsonNode item : root) {
                 index++;
                 result.increaseTotalQuestionCount();
-                importQuestion(fileName, questionType, index, item, result);
+                importQuestion(userId, fileName, questionType, index, item, result);
             }
         } catch (Exception e) {
             result.addFailure(new QuestionImportFailureVO(fileName, questionType, null, null, "文件解析失败：" + e.getMessage()));
@@ -120,14 +123,14 @@ public class QuestionImportServiceImpl implements QuestionImportService {
     /**
      * 导入单道题目。
      */
-    private void importQuestion(String fileName, String questionType, int index, JsonNode item, QuestionImportResultVO result) {
+    private void importQuestion(Long userId, String fileName, String questionType, int index, JsonNode item, QuestionImportResultVO result) {
         String questionId = text(item, "id");
         if (!StringUtils.hasText(questionId)) {
             result.addMissingIdQuestion(new QuestionImportFailureVO(fileName, questionType, index, null, "题目缺少id"));
             return;
         }
         try {
-            Question question = toQuestion(questionId, questionType, item);
+            Question question = toQuestion(userId, questionId, questionType, item);
             questionMapper.upsert(question);
             result.increaseSuccessQuestionCount();
         } catch (Exception e) {
@@ -138,12 +141,13 @@ public class QuestionImportServiceImpl implements QuestionImportService {
     /**
      * 将 JSON 节点转换成 QUESTION 表实体。
      */
-    private Question toQuestion(String questionId, String questionType, JsonNode item) throws IOException {
+    private Question toQuestion(Long userId, String questionId, String questionType, JsonNode item) throws IOException {
         LocalDateTime now = LocalDateTime.now();
         JsonNode options = item.get("options");
 
         Question question = new Question();
         question.setQuestionId(questionId);
+        question.setUserId(userId);
         question.setQuestionType(questionType);
         question.setQuestionContent(text(item, "question"));
         question.setQuestionImageBase64(firstText(item, "question_image_base64", "image_base64", "image"));

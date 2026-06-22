@@ -2,6 +2,7 @@ package com.lvwyh.reviewx.web.controller.question;
 
 import com.lvwyh.reviewx.web.common.response.ApiResponse;
 import com.lvwyh.reviewx.web.common.util.PageResult;
+import com.lvwyh.reviewx.web.security.LoginUserContext;
 import com.lvwyh.reviewx.web.security.RequirePermission;
 import com.lvwyh.reviewx.web.service.question.QuestionImportService;
 import com.lvwyh.reviewx.web.service.question.QuestionService;
@@ -53,8 +54,9 @@ public class QuestionController {
     @RequirePermission("question:view")
     @GetMapping("/detail")
     public ApiResponse<QuestionVO> detail(@NotBlank(message = "题目ID不能为空") @RequestParam String questionId) {
-        log.info("Question detail request: questionId={}", questionId);
-        return ApiResponse.success("查询成功", questionService.detail(questionId));
+        Long userId = LoginUserContext.require().getUserId();
+        log.info("Question detail request: userId={}, questionId={}", userId, questionId);
+        return ApiResponse.success("查询成功", questionService.detail(userId, questionId));
     }
 
     /**
@@ -71,8 +73,9 @@ public class QuestionController {
                                                   @RequestParam(required = false) String questionSource,
                                                   @RequestParam(required = false) Integer pageNum,
                                                   @RequestParam(required = false) Integer pageSize) {
-        log.info("Question search request: keyword={}, questionType={}, questionYear={}, questionSource={}", keyword, questionType, questionYear, questionSource);
-        return ApiResponse.success("查询成功", questionService.search(keyword, questionType, questionYear, questionSource, pageNum, pageSize));
+        Long userId = LoginUserContext.require().getUserId();
+        log.info("Question search request: userId={}, keyword={}, questionType={}, questionYear={}, questionSource={}", userId, keyword, questionType, questionYear, questionSource);
+        return ApiResponse.success("查询成功", questionService.search(userId, keyword, questionType, questionYear, questionSource, pageNum, pageSize));
     }
 
     /**
@@ -82,7 +85,8 @@ public class QuestionController {
     @RequirePermission("question:search")
     @GetMapping("/typeList")
     public ApiResponse<List<String>> typeList() {
-        return ApiResponse.success("查询成功", questionService.questionTypes());
+        Long userId = LoginUserContext.require().getUserId();
+        return ApiResponse.success("查询成功", questionService.questionTypes(userId));
     }
 
     /**
@@ -94,7 +98,8 @@ public class QuestionController {
     @RequirePermission("question:import")
     @PostMapping("/importFromDocsZip")
     public ApiResponse<QuestionImportResultVO> importFromDocsZip(@RequestParam("file") MultipartFile file) {
-        log.info("Question import zip upload request: filename={}, size={}", file.getOriginalFilename(), file.getSize());
-        return ApiResponse.success("导入完成", questionImportService.importFromZip(file));
+        Long userId = LoginUserContext.require().getUserId();
+        log.info("Question import zip upload request: userId={}, filename={}, size={}", userId, file.getOriginalFilename(), file.getSize());
+        return ApiResponse.success("导入完成", questionImportService.importFromZip(userId, file));
     }
 }

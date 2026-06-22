@@ -18,10 +18,11 @@ public interface QuestionMapper {
     int upsert(Question question);
 
     /** 按题目 ID 查询启用状态的题目。 */
-    Question selectById(@Param("questionId") String questionId);
+    Question selectById(@Param("userId") Long userId, @Param("questionId") String questionId);
 
     /** 按关键字、年份、来源分页搜索题目。 */
-    List<Question> search(@Param("keyword") String keyword,
+    List<Question> search(@Param("userId") Long userId,
+                          @Param("keyword") String keyword,
                           @Param("questionType") String questionType,
                           @Param("questionYear") String questionYear,
                           @Param("questionSource") String questionSource,
@@ -29,22 +30,25 @@ public interface QuestionMapper {
                           @Param("pageSize") int pageSize);
 
     /** 统计搜索条件下的题目总数。 */
-    long countSearch(@Param("keyword") String keyword,
+    long countSearch(@Param("userId") Long userId,
+                     @Param("keyword") String keyword,
                      @Param("questionType") String questionType,
                      @Param("questionYear") String questionYear,
                      @Param("questionSource") String questionSource);
 
     /** 按题目类型分组查询启用题目的题型列表。 */
-    List<String> selectQuestionTypes();
+    List<String> selectQuestionTypes(@Param("userId") Long userId);
 
     /** 随机抽取题目。 */
-    List<Question> selectRandom(@Param("questionType") String questionType,
+    List<Question> selectRandom(@Param("userId") Long userId,
+                                @Param("questionType") String questionType,
                                 @Param("questionYear") String questionYear,
                                 @Param("questionSource") String questionSource,
                                 @Param("size") int size);
 
     /** 按题目 ID 顺序分页查询题目。 */
-    List<Question> selectOrder(@Param("questionType") String questionType,
+    List<Question> selectOrder(@Param("userId") Long userId,
+                               @Param("questionType") String questionType,
                                @Param("questionYear") String questionYear,
                                @Param("questionSource") String questionSource,
                                @Param("offset") int offset,

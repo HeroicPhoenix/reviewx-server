@@ -11,6 +11,8 @@ public class Question {
 
     /** 题目字符串 ID，来自外部题库 JSON。 */
     private String questionId;
+    /** 题目归属用户 ID。 */
+    private Long userId;
     /** 题目类型。 */
     private String questionType;
     /** 题干文本。 */
@@ -45,6 +47,8 @@ public class Question {
 
     public String getQuestionId() { return questionId; }
     public void setQuestionId(String questionId) { this.questionId = questionId; }
+    public Long getUserId() { return userId; }
+    public void setUserId(Long userId) { this.userId = userId; }
     public String getQuestionType() { return questionType; }
     public void setQuestionType(String questionType) { this.questionType = questionType; }
     public String getQuestionContent() { return questionContent; }

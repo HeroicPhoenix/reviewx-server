@@ -53,7 +53,7 @@ public class AnswerRecordServiceImpl extends QuestionConvertSupport implements A
         if (ao.getEndTime().isBefore(ao.getStartTime())) {
             throw new BusinessException(400, "结束作答时间不能早于开始作答时间");
         }
-        Question question = questionMapper.selectById(ao.getQuestionId());
+        Question question = questionMapper.selectById(userId, ao.getQuestionId());
         if (question == null) {
             throw new BusinessException(404, "题目不存在");
         }

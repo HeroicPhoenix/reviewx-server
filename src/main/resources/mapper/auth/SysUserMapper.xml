@@ -22,6 +22,14 @@
         SELECT <include refid="Base_Column_List"/> FROM SYS_USER WHERE USERNAME = #{username} LIMIT 1
     </select>
 
+    <!-- 查询有效用户列表，供管理员查看。 -->
+    <select id="selectActiveUsers" resultType="com.lvwyh.reviewx.web.entity.auth.SysUser">
+        SELECT <include refid="Base_Column_List"/>
+        FROM SYS_USER
+        WHERE USER_STATUS != 3
+        ORDER BY CREATE_TIME DESC, USER_ID DESC
+    </select>
+
     <!-- 更新用户资料或密码哈希；修改密码后会同步更新 UPDATE_TIME。 -->
     <update id="update" parameterType="com.lvwyh.reviewx.web.entity.auth.SysUser">
         UPDATE SYS_USER
