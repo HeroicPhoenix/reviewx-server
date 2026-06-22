@@ -102,53 +102,55 @@ public class QuestionImportServiceImpl implements QuestionImportService {
      * 导入单个 JSON 文件中的全部题目。
      */
     private void importJsonFile(Long userId, String fileName, byte[] content, QuestionImportResultVO result) {
-        String questionType = resolveQuestionType(fileName);
+        String questionCategory = resolveQuestionType(fileName);
         try {
             JsonNode root = objectMapper.readTree(content);
             if (!root.isArray()) {
-                result.addFailure(new QuestionImportFailureVO(fileName, questionType, null, null, "JSON根节点不是数组"));
+                result.addFailure(new QuestionImportFailureVO(fileName, questionCategory, null, null, "JSON根节点不是数组"));
                 return;
             }
             int index = 0;
             for (JsonNode item : root) {
                 index++;
                 result.increaseTotalQuestionCount();
-                importQuestion(userId, fileName, questionType, index, item, result);
+                importQuestion(userId, fileName, questionCategory, index, item, result);
             }
         } catch (Exception e) {
-            result.addFailure(new QuestionImportFailureVO(fileName, questionType, null, null, "文件解析失败：" + e.getMessage()));
+            result.addFailure(new QuestionImportFailureVO(fileName, questionCategory, null, null, "文件解析失败：" + e.getMessage()));
         }
     }
 
     /**
      * 导入单道题目。
      */
-    private void importQuestion(Long userId, String fileName, String questionType, int index, JsonNode item, QuestionImportResultVO result) {
+    private void importQuestion(Long userId, String fileName, String questionCategory, int index, JsonNode item, QuestionImportResultVO result) {
         String questionId = text(item, "id");
         if (!StringUtils.hasText(questionId)) {
-            result.addMissingIdQuestion(new QuestionImportFailureVO(fileName, questionType, index, null, "题目缺少id"));
+            result.addMissingIdQuestion(new QuestionImportFailureVO(fileName, questionCategory, index, null, "题目缺少id"));
             return;
         }
         try {
-            Question question = toQuestion(userId, questionId, questionType, item);
+            Question question = toQuestion(userId, questionId, questionCategory, item);
             questionMapper.upsert(question);
             result.increaseSuccessQuestionCount();
         } catch (Exception e) {
-            result.addFailure(new QuestionImportFailureVO(fileName, questionType, index, questionId, "题目导入失败：" + e.getMessage()));
+            result.addFailure(new QuestionImportFailureVO(fileName, questionCategory, index, questionId, "题目导入失败：" + e.getMessage()));
         }
     }
 
     /**
      * 将 JSON 节点转换成 QUESTION 表实体。
      */
-    private Question toQuestion(Long userId, String questionId, String questionType, JsonNode item) throws IOException {
+    private Question toQuestion(Long userId, String questionId, String questionCategory, JsonNode item) throws IOException {
         LocalDateTime now = LocalDateTime.now();
         JsonNode options = item.get("options");
+        JsonNode answer = item.get("answer");
 
         Question question = new Question();
         question.setQuestionId(questionId);
         question.setUserId(userId);
-        question.setQuestionType(questionType);
+        question.setQuestionType(resolveAnswerType(answer));
+        question.setQuestionCategory(questionCategory);
         question.setQuestionContent(text(item, "question"));
         question.setQuestionImageBase64(firstText(item, "question_image_base64", "image_base64", "image"));
         question.setOption1(option(options, "A"));
@@ -159,7 +161,7 @@ public class QuestionImportServiceImpl implements QuestionImportService {
         question.setOption6(option(options, "F"));
         question.setOption7(option(options, "G"));
         question.setOption8(option(options, "H"));
-        question.setAnswerContent(item.has("answer") ? objectMapper.writeValueAsString(item.get("answer")) : "[]");
+        question.setAnswerContent(answer == null ? "[]" : objectMapper.writeValueAsString(answer));
         question.setAnswerSource(text(item, "answer_source"));
         question.setQuestionYear(text(item, "year"));
         question.setQuestionSource(text(item, "question_source"));
@@ -168,6 +170,16 @@ public class QuestionImportServiceImpl implements QuestionImportService {
         question.setCreatedTime(now);
         question.setUpdatedTime(now);
         return question;
+    }
+
+    /**
+     * 题目类型：1单选、2多选。按答案数量直接识别。
+     */
+    private Integer resolveAnswerType(JsonNode answer) {
+        if (answer != null && answer.isArray() && answer.size() > 1) {
+            return 2;
+        }
+        return 1;
     }
 
     /**

@@ -13,8 +13,10 @@ public class Question {
     private String questionId;
     /** 题目归属用户 ID。 */
     private Long userId;
-    /** 题目类型。 */
-    private String questionType;
+    /** 题目类型：1单选、2多选。 */
+    private Integer questionType;
+    /** 题目科目分类，例如言语理解、判断推理。 */
+    private String questionCategory;
     /** 题干文本。 */
     private String questionContent;
     /** 题目图片 Base64。 */
@@ -49,8 +51,10 @@ public class Question {
     public void setQuestionId(String questionId) { this.questionId = questionId; }
     public Long getUserId() { return userId; }
     public void setUserId(Long userId) { this.userId = userId; }
-    public String getQuestionType() { return questionType; }
-    public void setQuestionType(String questionType) { this.questionType = questionType; }
+    public Integer getQuestionType() { return questionType; }
+    public void setQuestionType(Integer questionType) { this.questionType = questionType; }
+    public String getQuestionCategory() { return questionCategory; }
+    public void setQuestionCategory(String questionCategory) { this.questionCategory = questionCategory; }
     public String getQuestionContent() { return questionContent; }
     public void setQuestionContent(String questionContent) { this.questionContent = questionContent; }
     public String getQuestionImageBase64() { return questionImageBase64; }
