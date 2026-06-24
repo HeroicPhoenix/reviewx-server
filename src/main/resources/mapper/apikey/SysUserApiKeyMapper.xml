@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lvwyh.reviewx.web.mapper.apikey.SysUserApiKeyMapper">
+    <!-- SYS_USER_API_KEY 表基础字段清单。 -->
+    <sql id="Base_Column_List">
+        API_KEY_ID, USER_ID, API_KEY_NAME, API_KEY_PREFIX, API_KEY_HASH, API_KEY_STATUS,
+        EXPIRE_TIME, LAST_USED_TIME, CREATE_TIME, UPDATE_TIME
+    </sql>
+
+    <!-- 新增 API Key。完整 Key 不入库，只保存前缀和 HMAC 哈希。 -->
+    <insert id="insert" parameterType="com.lvwyh.reviewx.web.entity.apikey.SysUserApiKey" useGeneratedKeys="true" keyProperty="apiKeyId" keyColumn="API_KEY_ID">
+        INSERT INTO SYS_USER_API_KEY (
+            USER_ID, API_KEY_NAME, API_KEY_PREFIX, API_KEY_HASH, API_KEY_STATUS,
+            EXPIRE_TIME, LAST_USED_TIME, CREATE_TIME, UPDATE_TIME
+        ) VALUES (
+            #{userId}, #{apiKeyName}, #{apiKeyPrefix}, #{apiKeyHash}, #{apiKeyStatus},
+            #{expireTime}, #{lastUsedTime}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <!-- 认证时通过前缀快速定位候选记录。 -->
+    <select id="selectByPrefix" resultType="com.lvwyh.reviewx.web.entity.apikey.SysUserApiKey">
+        SELECT <include refid="Base_Column_List"/>
+        FROM SYS_USER_API_KEY
+        WHERE API_KEY_PREFIX = #{apiKeyPrefix}
+        LIMIT 1
+    </select>
+
+    <!-- 查询当前用户创建的 API Key 列表，不返回完整 Key 明文。 -->
+    <select id="selectByUserId" resultType="com.lvwyh.reviewx.web.entity.apikey.SysUserApiKey">
+        SELECT <include refid="Base_Column_List"/>
+        FROM SYS_USER_API_KEY
+        WHERE USER_ID = #{userId}
+        ORDER BY CREATE_TIME DESC
+    </select>
+
+    <!-- 查询当前用户名下指定 API Key。 -->
+    <select id="selectByIdAndUserId" resultType="com.lvwyh.reviewx.web.entity.apikey.SysUserApiKey">
+        SELECT <include refid="Base_Column_List"/>
+        FROM SYS_USER_API_KEY
+        WHERE API_KEY_ID = #{apiKeyId}
+          AND USER_ID = #{userId}
+        LIMIT 1
+    </select>
+
+    <!-- 禁用 API Key。 -->
+    <update id="disable">
+        UPDATE SYS_USER_API_KEY
+        SET API_KEY_STATUS = 2,
+            UPDATE_TIME = #{updateTime}
+        WHERE API_KEY_ID = #{apiKeyId}
+          AND USER_ID = #{userId}
+    </update>
+
+    <!-- 删除当前用户名下 API Key。 -->
+    <delete id="delete">
+        DELETE FROM SYS_USER_API_KEY
+        WHERE API_KEY_ID = #{apiKeyId}
+          AND USER_ID = #{userId}
+    </delete>
+
+    <!-- API Key 认证成功后更新最后使用时间。 -->
+    <update id="updateLastUsedTime">
+        UPDATE SYS_USER_API_KEY
+        SET LAST_USED_TIME = #{lastUsedTime},
+            UPDATE_TIME = #{lastUsedTime}
+        WHERE API_KEY_ID = #{apiKeyId}
+    </update>
+</mapper>

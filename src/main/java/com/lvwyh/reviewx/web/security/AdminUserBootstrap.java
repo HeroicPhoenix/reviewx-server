@@ -53,6 +53,10 @@ public class AdminUserBootstrap implements ApplicationRunner {
             {"practice:question", "刷题取题", "/api/practice/**", "GET"},
             {"practice:submit", "提交答案", "/api/practice/submitAnswer", "POST"},
             {"answer-record:view", "查看答题记录", "/api/answerRecord/**", "GET"},
+            {"api-key:create", "创建API Key", "/api/apiKey/create", "POST"},
+            {"api-key:list", "查询API Key列表", "/api/apiKey/list", "GET"},
+            {"api-key:disable", "禁用API Key", "/api/apiKey/disable", "POST"},
+            {"api-key:delete", "删除API Key", "/api/apiKey/delete", "POST"},
             {"user:manage", "管理用户", "/api/user/**", "*"}
     };
 
@@ -68,7 +72,11 @@ public class AdminUserBootstrap implements ApplicationRunner {
             "question:import",
             "practice:question",
             "practice:submit",
-            "answer-record:view"
+            "answer-record:view",
+            "api-key:create",
+            "api-key:list",
+            "api-key:disable",
+            "api-key:delete"
     };
 
     private final SysUserMapper sysUserMapper;

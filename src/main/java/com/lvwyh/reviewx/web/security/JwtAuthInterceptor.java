@@ -1,6 +1,7 @@
 package com.lvwyh.reviewx.web.security;
 
 import com.lvwyh.reviewx.web.common.exception.BusinessException;
+import com.lvwyh.reviewx.web.service.apikey.ApiKeyAuthService;
 import com.lvwyh.reviewx.web.service.auth.AccessService;
 import com.lvwyh.reviewx.web.service.auth.TokenService;
 import com.lvwyh.reviewx.web.service.auth.model.TokenClaims;
@@ -26,6 +27,9 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
     /** 标准认证请求头名称。 */
     private static final String HEADER_AUTHORIZATION = "Authorization";
 
+    /** API Key 请求头名称。 */
+    private static final String HEADER_API_KEY = "X-API-Key";
+
     /** Bearer Token 前缀。 */
     private static final String BEARER_PREFIX = "Bearer ";
 
@@ -50,9 +54,14 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
 
     private final AccessService accessService;
 
-    public JwtAuthInterceptor(TokenService tokenService, AccessService accessService) {
+    private final ApiKeyAuthService apiKeyAuthService;
+
+    public JwtAuthInterceptor(TokenService tokenService,
+                              AccessService accessService,
+                              ApiKeyAuthService apiKeyAuthService) {
         this.tokenService = tokenService;
         this.accessService = accessService;
+        this.apiKeyAuthService = apiKeyAuthService;
     }
 
     /**
@@ -68,10 +77,24 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
         }
 
         String authorization = request.getHeader(HEADER_AUTHORIZATION);
-        if (!StringUtils.hasText(authorization) || !authorization.startsWith(BEARER_PREFIX)) {
-            throw new BusinessException(401, "缺少访问令牌");
+        if (StringUtils.hasText(authorization) && authorization.startsWith(BEARER_PREFIX)) {
+            authenticateByJwt(authorization);
+            return true;
         }
 
+        String apiKey = request.getHeader(HEADER_API_KEY);
+        if (StringUtils.hasText(apiKey)) {
+            LoginUserContext.set(apiKeyAuthService.authenticate(apiKey));
+            return true;
+        }
+
+        throw new BusinessException(401, "缺少访问令牌或API Key");
+    }
+
+    /**
+     * 使用 JWT Bearer Token 认证。
+     */
+    private void authenticateByJwt(String authorization) {
         TokenClaims claims = tokenService.parse(authorization.substring(BEARER_PREFIX.length()));
         if (claims.getUserId() == null || claims.getTokenVersion() == null) {
             throw new BusinessException(401, "访问令牌无效");
@@ -82,7 +105,6 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
             throw new BusinessException(401, "访问令牌已失效，请重新登录");
         }
         LoginUserContext.set(loginUser);
-        return true;
     }
 
     /**

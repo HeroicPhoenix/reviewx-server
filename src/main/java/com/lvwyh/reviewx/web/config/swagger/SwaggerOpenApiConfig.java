@@ -11,6 +11,7 @@ import org.springdoc.core.customizers.OpenApiCustomiser;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -18,13 +19,17 @@ import java.util.Map;
 /**
  * Swagger / OpenAPI 配置。
  *
- * 注册 Bearer Token 认证方案，让 Swagger UI 支持登录后携带令牌访问受保护接口。
+ * 注册 Bearer Token 和 API Key 两种认证方案，让 Swagger UI 支持登录后携带令牌，
+ * 也支持使用用户创建的 API Key 访问受保护接口。
  */
 @Configuration
 public class SwaggerOpenApiConfig {
 
-    /** Swagger UI 里显示的安全方案名称。 */
-    private static final String SECURITY_SCHEME_NAME = "BearerAuth";
+    /** Swagger UI 里显示的 Bearer Token 安全方案名称。 */
+    private static final String BEARER_SECURITY_SCHEME_NAME = "BearerAuth";
+
+    /** Swagger UI 里显示的 API Key 安全方案名称。 */
+    private static final String API_KEY_SECURITY_SCHEME_NAME = "ApiKeyAuth";
 
     /** 登录接口本身不需要携带 Token。 */
     private static final String LOGIN_PATH = "/api/auth/login";
@@ -32,7 +37,8 @@ public class SwaggerOpenApiConfig {
     /**
      * OpenAPI 基础信息和全局认证方案。
      *
-     * 在 Swagger UI 右上角会出现 Authorize 按钮，输入登录接口返回的 accessToken 即可。
+     * 在 Swagger UI 右上角会出现 Authorize 按钮，可输入登录接口返回的 accessToken，
+     * 也可输入用户创建的 API Key。
      */
     @Bean
     public OpenAPI reviewXOpenAPI() {
@@ -42,17 +48,22 @@ public class SwaggerOpenApiConfig {
                         .description("ReviewX 刷题工具后端接口文档")
                         .version("1.0.0"))
                 .components(new Components()
-                        .addSecuritySchemes(SECURITY_SCHEME_NAME, new SecurityScheme()
+                        .addSecuritySchemes(BEARER_SECURITY_SCHEME_NAME, new SecurityScheme()
                                 .name("Authorization")
                                 .type(SecurityScheme.Type.HTTP)
                                 .scheme("bearer")
-                                .bearerFormat("JWT")));
+                                .bearerFormat("JWT"))
+                        .addSecuritySchemes(API_KEY_SECURITY_SCHEME_NAME, new SecurityScheme()
+                                .name("X-API-Key")
+                                .type(SecurityScheme.Type.APIKEY)
+                                .in(SecurityScheme.In.HEADER)));
     }
 
     /**
-     * 给需要登录的接口追加 Bearer Token 安全要求。
+     * 给需要登录的接口追加认证要求。
      *
      * 登录接口会清空 security，避免 Swagger UI 要求先授权才能调用登录。
+     * OpenAPI 中多个 SecurityRequirement 对象表示“或”的关系，因此这里允许 Bearer Token 或 API Key 任一方式通过。
      */
     @Bean
     public OpenApiCustomiser bearerTokenOpenApiCustomiser() {
@@ -60,7 +71,10 @@ public class SwaggerOpenApiConfig {
             if (openApi.getPaths() == null) {
                 return;
             }
-            SecurityRequirement securityRequirement = new SecurityRequirement().addList(SECURITY_SCHEME_NAME);
+            List<SecurityRequirement> securityRequirements = Arrays.asList(
+                    new SecurityRequirement().addList(BEARER_SECURITY_SCHEME_NAME),
+                    new SecurityRequirement().addList(API_KEY_SECURITY_SCHEME_NAME)
+            );
             for (Map.Entry<String, PathItem> entry : openApi.getPaths().entrySet()) {
                 String path = entry.getKey();
                 PathItem pathItem = entry.getValue();
@@ -68,7 +82,7 @@ public class SwaggerOpenApiConfig {
                     applySecurity(pathItem, Collections.emptyList());
                     continue;
                 }
-                applySecurity(pathItem, Collections.singletonList(securityRequirement));
+                applySecurity(pathItem, securityRequirements);
             }
         };
     }
