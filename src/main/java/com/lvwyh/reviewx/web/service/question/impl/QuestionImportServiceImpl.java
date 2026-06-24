@@ -188,19 +188,43 @@ public class QuestionImportServiceImpl implements QuestionImportService {
     }
 
     /**
-     * 从 zip 路径中解析题目类型。
+     * 从 zip 路径中解析题目科目分类。
+     *
+     * 兼容两种常见结构：
+     * 1. 分类/文件.json
+     * 2. 根目录/分类/文件.json
      */
     private String resolveQuestionType(String fileName) {
-        String[] parts = fileName.split("/");
-        return parts.length >= 3 ? parts[1] : "";
+        String[] parts = splitZipPath(fileName);
+        if (parts.length < 2) {
+            return "";
+        }
+        if (parts.length == 2) {
+            return parts[0];
+        }
+        return parts[1];
     }
 
     /**
      * 判断 zip 内文件是否需要跳过。
      */
     private boolean shouldSkip(String fileName) {
-        String[] parts = fileName.split("/");
-        return parts.length >= 2 && LOGS_DIR_NAME.equalsIgnoreCase(parts[1]);
+        String[] parts = splitZipPath(fileName);
+        return parts.length > 0
+                && (LOGS_DIR_NAME.equalsIgnoreCase(parts[0])
+                || "__MACOSX".equalsIgnoreCase(parts[0])
+                || (parts.length >= 2 && LOGS_DIR_NAME.equalsIgnoreCase(parts[1])));
+    }
+
+    private String[] splitZipPath(String fileName) {
+        if (fileName == null) {
+            return new String[0];
+        }
+        String normalized = fileName.replace('\\', '/');
+        while (normalized.startsWith("/")) {
+            normalized = normalized.substring(1);
+        }
+        return normalized.split("/");
     }
 
     /**
