@@ -8,5 +8,5 @@ public interface QuestionImportService {
     /**
      * 从上传的 zip 文件导入题目。
      */
-    QuestionImportResultVO importFromZip(Long userId, MultipartFile file);
+    QuestionImportResultVO importFromZip(Long userId, MultipartFile file, boolean clearBeforeImport);
 }

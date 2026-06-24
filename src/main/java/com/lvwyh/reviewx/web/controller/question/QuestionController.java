@@ -97,9 +97,10 @@ public class QuestionController {
     @Operation(summary = "上传zip导入题目")
     @RequirePermission("question:import")
     @PostMapping("/importFromDocsZip")
-    public ApiResponse<QuestionImportResultVO> importFromDocsZip(@RequestParam("file") MultipartFile file) {
+    public ApiResponse<QuestionImportResultVO> importFromDocsZip(@RequestParam("file") MultipartFile file,
+                                                                 @RequestParam(value = "clearBeforeImport", defaultValue = "false") Boolean clearBeforeImport) {
         Long userId = LoginUserContext.require().getUserId();
-        log.info("Question import zip upload request: userId={}, filename={}, size={}", userId, file.getOriginalFilename(), file.getSize());
-        return ApiResponse.success("导入完成", questionImportService.importFromZip(userId, file));
+        log.info("Question import zip upload request: userId={}, filename={}, size={}, clearBeforeImport={}", userId, file.getOriginalFilename(), file.getSize(), clearBeforeImport);
+        return ApiResponse.success("导入完成", questionImportService.importFromZip(userId, file, Boolean.TRUE.equals(clearBeforeImport)));
     }
 }

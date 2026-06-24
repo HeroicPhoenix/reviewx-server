@@ -49,6 +49,12 @@
             UPDATED_TIME = VALUES(UPDATED_TIME)
     </insert>
 
+    <!-- 清空当前用户题库。 -->
+    <delete id="deleteByUserId">
+        DELETE FROM QUESTION
+        WHERE USER_ID = #{userId}
+    </delete>
+
     <!-- 题目搜索通用过滤条件：只查询启用题目，并按需过滤关键词、年份和来源。 -->
     <sql id="Search_Where">
         USER_ID = #{userId}

@@ -17,6 +17,9 @@ public interface QuestionMapper {
     /** 新增或更新题目，导入题库时按 questionId 幂等写入。 */
     int upsert(Question question);
 
+    /** 删除当前用户题库中的全部题目。 */
+    int deleteByUserId(@Param("userId") Long userId);
+
     /** 按题目 ID 查询启用状态的题目。 */
     Question selectById(@Param("userId") Long userId, @Param("questionId") String questionId);
 

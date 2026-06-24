@@ -9,6 +9,7 @@ import com.lvwyh.reviewx.web.service.question.QuestionImportService;
 import com.lvwyh.reviewx.web.vo.question.QuestionImportFailureVO;
 import com.lvwyh.reviewx.web.vo.question.QuestionImportResultVO;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -43,7 +44,8 @@ public class QuestionImportServiceImpl implements QuestionImportService {
     }
 
     @Override
-    public QuestionImportResultVO importFromZip(Long userId, MultipartFile file) {
+    @Transactional(rollbackFor = Exception.class)
+    public QuestionImportResultVO importFromZip(Long userId, MultipartFile file, boolean clearBeforeImport) {
         if (userId == null) {
             throw new BusinessException(401, "登录状态已失效");
         }
@@ -60,6 +62,9 @@ public class QuestionImportServiceImpl implements QuestionImportService {
         try {
             tempFile = File.createTempFile("reviewx-question-import-", ".zip");
             file.transferTo(tempFile);
+            if (clearBeforeImport) {
+                questionMapper.deleteByUserId(userId);
+            }
             return importZipFile(userId, tempFile);
         } catch (IOException e) {
             throw new BusinessException(500, "保存上传 zip 文件失败：" + e.getMessage(), e);
