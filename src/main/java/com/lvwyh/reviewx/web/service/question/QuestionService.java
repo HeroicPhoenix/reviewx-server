@@ -22,7 +22,7 @@ public interface QuestionService {
     List<String> questionTypes(Long userId);
 
     /** 随机抽题，不返回正确答案。 */
-    List<QuestionVO> randomList(Long userId, String questionType, String questionYear, String questionSource, Integer size);
+    List<QuestionVO> randomList(Long userId, String questionType, String questionYear, String questionSource, String randomScope, Integer size);
 
     /** 顺序分页取题，不返回正确答案。 */
     PageResult<QuestionVO> orderList(Long userId, String questionType, String questionYear, String questionSource, Integer pageNum, Integer pageSize);

@@ -54,9 +54,10 @@ public class PracticeController {
     public ApiResponse<List<QuestionVO>> randomList(@RequestParam(required = false) String questionType,
                                                     @RequestParam(required = false) String questionYear,
                                                     @RequestParam(required = false) String questionSource,
+                                                    @RequestParam(required = false) String randomScope,
                                                     @RequestParam(required = false) Integer size) {
         Long userId = LoginUserContext.require().getUserId();
-        return ApiResponse.success("查询成功", questionService.randomList(userId, questionType, questionYear, questionSource, size));
+        return ApiResponse.success("查询成功", questionService.randomList(userId, questionType, questionYear, questionSource, randomScope, size));
     }
 
     /**

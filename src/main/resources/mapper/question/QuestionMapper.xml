@@ -126,6 +126,22 @@
         <if test="questionSource != null and questionSource != ''">
             AND QUESTION_SOURCE = #{questionSource}
         </if>
+        <if test="randomScope == 'done'">
+            AND EXISTS (
+                SELECT 1
+                FROM ANSWER_RECORD ar
+                WHERE ar.USER_ID = #{userId}
+                  AND ar.QUESTION_ID = QUESTION.QUESTION_ID
+            )
+        </if>
+        <if test="randomScope == 'undone'">
+            AND NOT EXISTS (
+                SELECT 1
+                FROM ANSWER_RECORD ar
+                WHERE ar.USER_ID = #{userId}
+                  AND ar.QUESTION_ID = QUESTION.QUESTION_ID
+            )
+        </if>
         ORDER BY RAND()
         LIMIT #{size}
     </select>
