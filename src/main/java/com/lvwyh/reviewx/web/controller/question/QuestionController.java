@@ -23,7 +23,11 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Pattern;
+import javax.validation.constraints.Size;
 import java.util.List;
 
 /**
@@ -70,12 +74,12 @@ public class QuestionController {
     @Operation(summary = "搜索题目")
     @RequirePermission("question:search")
     @GetMapping("/search")
-    public ApiResponse<PageResult<QuestionVO>> search(@RequestParam(required = false) String keyword,
-                                                  @RequestParam(required = false) String questionType,
-                                                  @RequestParam(required = false) String questionYear,
-                                                  @RequestParam(required = false) String questionSource,
-                                                  @RequestParam(required = false) Integer pageNum,
-                                                  @RequestParam(required = false) Integer pageSize) {
+    public ApiResponse<PageResult<QuestionVO>> search(@Size(max = 255, message = "关键词最多255个字符") @RequestParam(required = false) String keyword,
+                                                  @Size(max = 64, message = "题目分类最多64个字符") @RequestParam(required = false) String questionType,
+                                                  @Pattern(regexp = "^$|^\\d{4}$", message = "题目年份必须是4位数字") @RequestParam(required = false) String questionYear,
+                                                  @Size(max = 255, message = "题目来源最多255个字符") @RequestParam(required = false) String questionSource,
+                                                  @Min(value = 1, message = "页码必须大于0") @RequestParam(required = false) Integer pageNum,
+                                                  @Min(value = 1, message = "每页数量必须大于0") @Max(value = 100, message = "每页数量不能超过100") @RequestParam(required = false) Integer pageSize) {
         Long userId = LoginUserContext.require().getUserId();
         log.info("Question search request: userId={}, keyword={}, questionType={}, questionYear={}, questionSource={}", userId, keyword, questionType, questionYear, questionSource);
         return ApiResponse.success("查询成功", questionService.search(userId, keyword, questionType, questionYear, questionSource, pageNum, pageSize));

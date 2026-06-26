@@ -1,46 +1,83 @@
 package com.lvwyh.reviewx.web.ao.question;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
+import java.io.Serializable;
 import java.util.List;
 
 /**
  * 题目编辑请求参数。
  */
-public class QuestionUpdateAO {
+@Schema(description = "题目编辑请求参数")
+public class QuestionUpdateAO implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
+    @Schema(description = "题目ID", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "题目ID不能为空")
+    @Size(max = 255, message = "题目ID最多255个字符")
     private String questionId;
 
+    @Schema(description = "题目分类")
     @Size(max = 64, message = "题目分类最多64个字符")
     private String questionCategory;
 
+    @Schema(description = "题干", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "题干不能为空")
     private String questionContent;
 
+    @Schema(description = "题目图片Base64，仅支持一张图片")
     private String questionImageBase64;
+
+    @Schema(description = "选项A")
     private String option1;
+
+    @Schema(description = "选项B")
     private String option2;
+
+    @Schema(description = "选项C")
     private String option3;
+
+    @Schema(description = "选项D")
     private String option4;
+
+    @Schema(description = "选项E")
     private String option5;
+
+    @Schema(description = "选项F")
     private String option6;
+
+    @Schema(description = "选项G")
     private String option7;
+
+    @Schema(description = "选项H")
     private String option8;
 
-    @Size(min = 1, message = "答案不能为空")
-    private List<String> answerContent;
+    @Schema(description = "正确答案JSON数组，例如 [\"A\",\"B\"]", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Valid
+    @NotEmpty(message = "答案不能为空")
+    @Size(max = 8, message = "答案最多8个")
+    private List<@Pattern(regexp = "^[A-H]$", message = "答案只能是A到H") String> answerContent;
 
+    @Schema(description = "答案来源")
     @Size(max = 255, message = "答案来源最多255个字符")
     private String answerSource;
 
-    @Size(max = 255, message = "题目年份最多255个字符")
+    @Schema(description = "题目年份，4位数字")
+    @Pattern(regexp = "^$|^\\d{4}$", message = "题目年份必须是4位数字")
     private String questionYear;
 
+    @Schema(description = "题目来源")
     @Size(max = 255, message = "题目来源最多255个字符")
     private String questionSource;
 
-    @Size(max = 255, message = "正确率最多255个字符")
+    @Schema(description = "机构正确率百分比，范围0%到100%，例如49%")
+    @Pattern(regexp = "^$|^(100(?:\\.0{1,2})?|(?:\\d|[1-9]\\d)(?:\\.\\d{1,2})?)%$", message = "机构正确率必须是0%到100%之间的百分比")
     private String correctRate;
 
     public String getQuestionId() { return questionId; }

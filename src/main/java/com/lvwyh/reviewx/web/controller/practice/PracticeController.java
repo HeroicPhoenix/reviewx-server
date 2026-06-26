@@ -22,6 +22,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.Pattern;
+import javax.validation.constraints.Size;
 import java.util.List;
 
 /**
@@ -51,11 +55,11 @@ public class PracticeController {
     @Operation(summary = "随机刷题")
     @RequirePermission("practice:question")
     @GetMapping("/randomList")
-    public ApiResponse<List<QuestionVO>> randomList(@RequestParam(required = false) String questionType,
-                                                    @RequestParam(required = false) String questionYear,
-                                                    @RequestParam(required = false) String questionSource,
-                                                    @RequestParam(required = false) String randomScope,
-                                                    @RequestParam(required = false) Integer size) {
+    public ApiResponse<List<QuestionVO>> randomList(@Size(max = 64, message = "题目分类最多64个字符") @RequestParam(required = false) String questionType,
+                                                    @Pattern(regexp = "^$|^\\d{4}$", message = "题目年份必须是4位数字") @RequestParam(required = false) String questionYear,
+                                                    @Size(max = 255, message = "题目来源最多255个字符") @RequestParam(required = false) String questionSource,
+                                                    @Pattern(regexp = "^$|^(all|done|undone)$", message = "随机范围不合法") @RequestParam(required = false) String randomScope,
+                                                    @Min(value = 1, message = "取题数量必须大于0") @Max(value = 50, message = "取题数量不能超过50") @RequestParam(required = false) Integer size) {
         Long userId = LoginUserContext.require().getUserId();
         return ApiResponse.success("查询成功", questionService.randomList(userId, questionType, questionYear, questionSource, randomScope, size));
     }
@@ -66,11 +70,11 @@ public class PracticeController {
     @Operation(summary = "顺序刷题")
     @RequirePermission("practice:question")
     @GetMapping("/orderList")
-    public ApiResponse<PageResult<QuestionVO>> orderList(@RequestParam(required = false) String questionType,
-                                                     @RequestParam(required = false) String questionYear,
-                                                     @RequestParam(required = false) String questionSource,
-                                                     @RequestParam(required = false) Integer pageNum,
-                                                     @RequestParam(required = false) Integer pageSize) {
+    public ApiResponse<PageResult<QuestionVO>> orderList(@Size(max = 64, message = "题目分类最多64个字符") @RequestParam(required = false) String questionType,
+                                                     @Pattern(regexp = "^$|^\\d{4}$", message = "题目年份必须是4位数字") @RequestParam(required = false) String questionYear,
+                                                     @Size(max = 255, message = "题目来源最多255个字符") @RequestParam(required = false) String questionSource,
+                                                     @Min(value = 1, message = "页码必须大于0") @RequestParam(required = false) Integer pageNum,
+                                                     @Min(value = 1, message = "每页数量必须大于0") @Max(value = 100, message = "每页数量不能超过100") @RequestParam(required = false) Integer pageSize) {
         Long userId = LoginUserContext.require().getUserId();
         return ApiResponse.success("查询成功", questionService.orderList(userId, questionType, questionYear, questionSource, pageNum, pageSize));
     }
@@ -83,10 +87,10 @@ public class PracticeController {
     @Operation(summary = "错题刷题")
     @RequirePermission("practice:question")
     @GetMapping("/wrongList")
-    public ApiResponse<List<QuestionVO>> wrongList(@RequestParam(required = false) String questionType,
-                                                   @RequestParam(required = false) String questionYear,
-                                                   @RequestParam(required = false) String questionSource,
-                                                   @RequestParam(required = false) Integer size) {
+    public ApiResponse<List<QuestionVO>> wrongList(@Size(max = 64, message = "题目分类最多64个字符") @RequestParam(required = false) String questionType,
+                                                   @Pattern(regexp = "^$|^\\d{4}$", message = "题目年份必须是4位数字") @RequestParam(required = false) String questionYear,
+                                                   @Size(max = 255, message = "题目来源最多255个字符") @RequestParam(required = false) String questionSource,
+                                                   @Min(value = 1, message = "取题数量必须大于0") @Max(value = 50, message = "取题数量不能超过50") @RequestParam(required = false) Integer size) {
         Long userId = LoginUserContext.require().getUserId();
         return ApiResponse.success("查询成功", questionService.wrongList(userId, questionType, questionYear, questionSource, size));
     }
