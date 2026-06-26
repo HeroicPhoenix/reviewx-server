@@ -1,6 +1,7 @@
 package com.lvwyh.reviewx.web.service.question;
 
 import com.lvwyh.reviewx.web.common.util.PageResult;
+import com.lvwyh.reviewx.web.ao.question.QuestionUpdateAO;
 import com.lvwyh.reviewx.web.vo.question.QuestionVO;
 
 import java.util.List;
@@ -8,7 +9,7 @@ import java.util.List;
 /**
  * 题目查询服务接口。
  *
- * 第一版只提供题目查看和刷题取题能力，不提供题目录入和维护能力。
+ * 提供题目查看、搜索、刷题取题和题目维护能力。
  */
 public interface QuestionService {
 
@@ -17,6 +18,9 @@ public interface QuestionService {
 
     /** 搜索题目，返回分页结果。 */
     PageResult<QuestionVO> search(Long userId, String keyword, String questionType, String questionYear, String questionSource, Integer pageNum, Integer pageSize);
+
+    /** 编辑当前用户自己的题目。 */
+    QuestionVO update(Long userId, QuestionUpdateAO ao);
 
     /** 查询启用题目的题型下拉列表。 */
     List<String> questionTypes(Long userId);

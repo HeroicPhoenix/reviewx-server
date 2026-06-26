@@ -55,6 +55,32 @@
         WHERE USER_ID = #{userId}
     </delete>
 
+    <!-- 编辑当前用户自己的题目。 -->
+    <update id="updateByIdAndUserId" parameterType="com.lvwyh.reviewx.web.entity.question.Question">
+        UPDATE QUESTION
+        SET QUESTION_TYPE = #{questionType},
+            QUESTION_CATEGORY = #{questionCategory},
+            QUESTION_CONTENT = #{questionContent},
+            QUESTION_IMAGE_BASE64 = #{questionImageBase64},
+            OPTION_1 = #{option1},
+            OPTION_2 = #{option2},
+            OPTION_3 = #{option3},
+            OPTION_4 = #{option4},
+            OPTION_5 = #{option5},
+            OPTION_6 = #{option6},
+            OPTION_7 = #{option7},
+            OPTION_8 = #{option8},
+            ANSWER_CONTENT = #{answerContent},
+            ANSWER_SOURCE = #{answerSource},
+            QUESTION_YEAR = #{questionYear},
+            QUESTION_SOURCE = #{questionSource},
+            CORRECT_RATE = #{correctRate},
+            UPDATED_TIME = #{updatedTime}
+        WHERE QUESTION_ID = #{questionId}
+          AND USER_ID = #{userId}
+          AND QUESTION_STATUS = 1
+    </update>
+
     <!-- 题目搜索通用过滤条件：只查询启用题目，并按需过滤关键词、年份和来源。 -->
     <sql id="Search_Where">
         USER_ID = #{userId}

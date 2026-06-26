@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * 题目 Mapper。
  *
- * 负责 question 表查询，第一版只提供只读能力，不提供题目新增、修改、删除。
+ * 负责 question 表查询和题目维护。
  */
 @Mapper
 public interface QuestionMapper {
@@ -19,6 +19,9 @@ public interface QuestionMapper {
 
     /** 删除当前用户题库中的全部题目。 */
     int deleteByUserId(@Param("userId") Long userId);
+
+    /** 按题目 ID 更新当前用户自己的题目。 */
+    int updateByIdAndUserId(Question question);
 
     /** 按题目 ID 查询启用状态的题目。 */
     Question selectById(@Param("userId") Long userId, @Param("questionId") String questionId);

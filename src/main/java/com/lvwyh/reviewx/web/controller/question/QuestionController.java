@@ -1,5 +1,6 @@
 package com.lvwyh.reviewx.web.controller.question;
 
+import com.lvwyh.reviewx.web.ao.question.QuestionUpdateAO;
 import com.lvwyh.reviewx.web.common.response.ApiResponse;
 import com.lvwyh.reviewx.web.common.util.PageResult;
 import com.lvwyh.reviewx.web.security.LoginUserContext;
@@ -15,18 +16,20 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 import java.util.List;
 
 /**
  * 题目查询控制器。
  *
- * 只提供查看和搜索能力，不负责题目录入或维护。
+ * 提供题目查看、搜索、导入和编辑能力。
  */
 @Tag(name = "题目管理")
 @Validated
@@ -76,6 +79,18 @@ public class QuestionController {
         Long userId = LoginUserContext.require().getUserId();
         log.info("Question search request: userId={}, keyword={}, questionType={}, questionYear={}, questionSource={}", userId, keyword, questionType, questionYear, questionSource);
         return ApiResponse.success("查询成功", questionService.search(userId, keyword, questionType, questionYear, questionSource, pageNum, pageSize));
+    }
+
+    /**
+     * 编辑当前用户自己的题目。
+     */
+    @Operation(summary = "编辑题目")
+    @RequirePermission("question:update")
+    @PostMapping("/update")
+    public ApiResponse<QuestionVO> update(@Valid @RequestBody QuestionUpdateAO ao) {
+        Long userId = LoginUserContext.require().getUserId();
+        log.info("Question update request: userId={}, questionId={}", userId, ao.getQuestionId());
+        return ApiResponse.success("保存成功", questionService.update(userId, ao));
     }
 
     /**
