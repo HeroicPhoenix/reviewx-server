@@ -29,6 +29,12 @@ public interface QuestionService {
     /** 查询启用题目的题型下拉列表。 */
     List<String> questionTypes(Long userId);
 
+    /** 查询启用题目的年份下拉列表。 */
+    List<String> questionYears(Long userId);
+
+    /** 查询启用题目的来源下拉列表。 */
+    List<String> questionSources(Long userId);
+
     /** 随机抽题，不返回正确答案。 */
     List<QuestionVO> randomList(Long userId, String questionType, String questionYear, String questionSource, String randomScope, Integer size);
 

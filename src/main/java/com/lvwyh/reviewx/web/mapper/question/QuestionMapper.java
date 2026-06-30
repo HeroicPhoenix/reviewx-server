@@ -48,6 +48,12 @@ public interface QuestionMapper {
     /** 按题目类型分组查询启用题目的题型列表。 */
     List<String> selectQuestionTypes(@Param("userId") Long userId);
 
+    /** 按年份分组查询启用题目的年份列表。 */
+    List<String> selectQuestionYears(@Param("userId") Long userId);
+
+    /** 按来源分组查询启用题目的来源列表。 */
+    List<String> selectQuestionSources(@Param("userId") Long userId);
+
     /** 随机抽取题目。 */
     List<Question> selectRandom(@Param("userId") Long userId,
                                 @Param("questionType") String questionType,

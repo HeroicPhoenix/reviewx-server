@@ -150,6 +150,30 @@
         ORDER BY QUESTION_CATEGORY ASC
     </select>
 
+    <!-- 按年份分组，用于前端年份下拉选项。 -->
+    <select id="selectQuestionYears" resultType="string">
+        SELECT QUESTION_YEAR
+        FROM QUESTION
+        WHERE QUESTION_STATUS = 1
+          AND USER_ID = #{userId}
+          AND QUESTION_YEAR IS NOT NULL
+          AND QUESTION_YEAR != ''
+        GROUP BY QUESTION_YEAR
+        ORDER BY QUESTION_YEAR DESC
+    </select>
+
+    <!-- 按来源分组，用于前端来源下拉选项。 -->
+    <select id="selectQuestionSources" resultType="string">
+        SELECT QUESTION_SOURCE
+        FROM QUESTION
+        WHERE QUESTION_STATUS = 1
+          AND USER_ID = #{userId}
+          AND QUESTION_SOURCE IS NOT NULL
+          AND QUESTION_SOURCE != ''
+        GROUP BY QUESTION_SOURCE
+        ORDER BY QUESTION_SOURCE ASC
+    </select>
+
     <!-- 随机抽题，用于普通随机练习。 -->
     <select id="selectRandom" resultType="com.lvwyh.reviewx.web.entity.question.Question">
         SELECT <include refid="Base_Column_List"/>

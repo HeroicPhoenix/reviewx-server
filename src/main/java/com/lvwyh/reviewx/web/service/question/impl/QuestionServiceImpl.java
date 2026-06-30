@@ -141,6 +141,22 @@ public class QuestionServiceImpl extends QuestionConvertSupport implements Quest
     }
 
     /**
+     * 查询年份下拉选项。
+     */
+    @Override
+    public List<String> questionYears(Long userId) {
+        return questionMapper.selectQuestionYears(userId);
+    }
+
+    /**
+     * 查询来源下拉选项。
+     */
+    @Override
+    public List<String> questionSources(Long userId) {
+        return questionMapper.selectQuestionSources(userId);
+    }
+
+    /**
      * 随机取题。
      *
      * 用于普通练习模式，不返回正确答案。
