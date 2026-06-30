@@ -36,6 +36,10 @@ public class QuestionVO implements Serializable {
     private List<String> answerContent;
     /** 答案来源。 */
     private String answerSource;
+    /** 题目解析文本。 */
+    private String analysisContent;
+    /** 题目解析图片 Base64。 */
+    private String analysisImageBase64;
     /** 题目年份。 */
     private String questionYear;
     /** 题目来源。 */
@@ -73,6 +77,10 @@ public class QuestionVO implements Serializable {
     public void setAnswerContent(List<String> answerContent) { this.answerContent = answerContent; }
     public String getAnswerSource() { return answerSource; }
     public void setAnswerSource(String answerSource) { this.answerSource = answerSource; }
+    public String getAnalysisContent() { return analysisContent; }
+    public void setAnalysisContent(String analysisContent) { this.analysisContent = analysisContent; }
+    public String getAnalysisImageBase64() { return analysisImageBase64; }
+    public void setAnalysisImageBase64(String analysisImageBase64) { this.analysisImageBase64 = analysisImageBase64; }
     public String getQuestionYear() { return questionYear; }
     public void setQuestionYear(String questionYear) { this.questionYear = questionYear; }
     public String getQuestionSource() { return questionSource; }

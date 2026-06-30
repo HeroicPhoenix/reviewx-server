@@ -4,13 +4,13 @@
     <!-- question 表完整字段清单，用于普通查询。 -->
     <sql id="Base_Column_List">
         QUESTION_ID, USER_ID, QUESTION_TYPE, QUESTION_CATEGORY, QUESTION_CONTENT, QUESTION_IMAGE_BASE64, OPTION_1, OPTION_2, OPTION_3, OPTION_4,
-        OPTION_5, OPTION_6, OPTION_7, OPTION_8, ANSWER_CONTENT, ANSWER_SOURCE, QUESTION_YEAR,
+        OPTION_5, OPTION_6, OPTION_7, OPTION_8, ANSWER_CONTENT, ANSWER_SOURCE, ANALYSIS_CONTENT, ANALYSIS_IMAGE_BASE64, QUESTION_YEAR,
         QUESTION_SOURCE, CORRECT_RATE, QUESTION_STATUS, CREATED_TIME, UPDATED_TIME
     </sql>
     <!-- 带 q 表别名的字段清单，用于 join 查询，避免列名歧义。 -->
     <sql id="Q_Base_Column_List">
         q.QUESTION_ID, q.USER_ID, q.QUESTION_TYPE, q.QUESTION_CATEGORY, q.QUESTION_CONTENT, q.QUESTION_IMAGE_BASE64, q.OPTION_1, q.OPTION_2, q.OPTION_3, q.OPTION_4,
-        q.OPTION_5, q.OPTION_6, q.OPTION_7, q.OPTION_8, q.ANSWER_CONTENT, q.ANSWER_SOURCE, q.QUESTION_YEAR,
+        q.OPTION_5, q.OPTION_6, q.OPTION_7, q.OPTION_8, q.ANSWER_CONTENT, q.ANSWER_SOURCE, q.ANALYSIS_CONTENT, q.ANALYSIS_IMAGE_BASE64, q.QUESTION_YEAR,
         q.QUESTION_SOURCE, q.CORRECT_RATE, q.QUESTION_STATUS, q.CREATED_TIME, q.UPDATED_TIME
     </sql>
 
@@ -72,9 +72,22 @@
             OPTION_8 = #{option8},
             ANSWER_CONTENT = #{answerContent},
             ANSWER_SOURCE = #{answerSource},
+            ANALYSIS_CONTENT = #{analysisContent},
+            ANALYSIS_IMAGE_BASE64 = #{analysisImageBase64},
             QUESTION_YEAR = #{questionYear},
             QUESTION_SOURCE = #{questionSource},
             CORRECT_RATE = #{correctRate},
+            UPDATED_TIME = #{updatedTime}
+        WHERE QUESTION_ID = #{questionId}
+          AND USER_ID = #{userId}
+          AND QUESTION_STATUS = 1
+    </update>
+
+    <!-- 单独编辑题目解析。 -->
+    <update id="updateAnalysisByIdAndUserId" parameterType="com.lvwyh.reviewx.web.entity.question.Question">
+        UPDATE QUESTION
+        SET ANALYSIS_CONTENT = #{analysisContent},
+            ANALYSIS_IMAGE_BASE64 = #{analysisImageBase64},
             UPDATED_TIME = #{updatedTime}
         WHERE QUESTION_ID = #{questionId}
           AND USER_ID = #{userId}

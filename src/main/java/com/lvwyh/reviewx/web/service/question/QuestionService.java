@@ -1,6 +1,7 @@
 package com.lvwyh.reviewx.web.service.question;
 
 import com.lvwyh.reviewx.web.common.util.PageResult;
+import com.lvwyh.reviewx.web.ao.question.QuestionAnalysisUpdateAO;
 import com.lvwyh.reviewx.web.ao.question.QuestionUpdateAO;
 import com.lvwyh.reviewx.web.vo.question.QuestionVO;
 
@@ -21,6 +22,9 @@ public interface QuestionService {
 
     /** 编辑当前用户自己的题目。 */
     QuestionVO update(Long userId, QuestionUpdateAO ao);
+
+    /** 编辑当前用户自己的题目解析。 */
+    QuestionVO updateAnalysis(Long userId, QuestionAnalysisUpdateAO ao);
 
     /** 查询启用题目的题型下拉列表。 */
     List<String> questionTypes(Long userId);

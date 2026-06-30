@@ -23,6 +23,9 @@ public interface QuestionMapper {
     /** 按题目 ID 更新当前用户自己的题目。 */
     int updateByIdAndUserId(Question question);
 
+    /** 按题目 ID 更新当前用户自己的题目解析。 */
+    int updateAnalysisByIdAndUserId(Question question);
+
     /** 按题目 ID 查询启用状态的题目。 */
     Question selectById(@Param("userId") Long userId, @Param("questionId") String questionId);
 

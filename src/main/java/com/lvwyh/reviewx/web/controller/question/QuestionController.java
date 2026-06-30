@@ -1,6 +1,7 @@
 package com.lvwyh.reviewx.web.controller.question;
 
 import com.lvwyh.reviewx.web.ao.question.QuestionUpdateAO;
+import com.lvwyh.reviewx.web.ao.question.QuestionAnalysisUpdateAO;
 import com.lvwyh.reviewx.web.common.response.ApiResponse;
 import com.lvwyh.reviewx.web.common.util.PageResult;
 import com.lvwyh.reviewx.web.security.LoginUserContext;
@@ -95,6 +96,18 @@ public class QuestionController {
         Long userId = LoginUserContext.require().getUserId();
         log.info("Question update request: userId={}, questionId={}", userId, ao.getQuestionId());
         return ApiResponse.success("保存成功", questionService.update(userId, ao));
+    }
+
+    /**
+     * 编辑当前用户自己的题目解析。
+     */
+    @Operation(summary = "编辑题目解析")
+    @RequirePermission("question:update")
+    @PostMapping("/updateAnalysis")
+    public ApiResponse<QuestionVO> updateAnalysis(@Valid @RequestBody QuestionAnalysisUpdateAO ao) {
+        Long userId = LoginUserContext.require().getUserId();
+        log.info("Question analysis update request: userId={}, questionId={}", userId, ao.getQuestionId());
+        return ApiResponse.success("保存成功", questionService.updateAnalysis(userId, ao));
     }
 
     /**

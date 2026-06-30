@@ -68,6 +68,12 @@ public class QuestionUpdateAO implements Serializable {
     @Size(max = 255, message = "答案来源最多255个字符")
     private String answerSource;
 
+    @Schema(description = "题目解析文本")
+    private String analysisContent;
+
+    @Schema(description = "题目解析图片Base64，仅支持一张图片")
+    private String analysisImageBase64;
+
     @Schema(description = "题目年份，4位数字")
     @Pattern(regexp = "^$|^\\d{4}$", message = "题目年份必须是4位数字")
     private String questionYear;
@@ -108,6 +114,10 @@ public class QuestionUpdateAO implements Serializable {
     public void setAnswerContent(List<String> answerContent) { this.answerContent = answerContent; }
     public String getAnswerSource() { return answerSource; }
     public void setAnswerSource(String answerSource) { this.answerSource = answerSource; }
+    public String getAnalysisContent() { return analysisContent; }
+    public void setAnalysisContent(String analysisContent) { this.analysisContent = analysisContent; }
+    public String getAnalysisImageBase64() { return analysisImageBase64; }
+    public void setAnalysisImageBase64(String analysisImageBase64) { this.analysisImageBase64 = analysisImageBase64; }
     public String getQuestionYear() { return questionYear; }
     public void setQuestionYear(String questionYear) { this.questionYear = questionYear; }
     public String getQuestionSource() { return questionSource; }

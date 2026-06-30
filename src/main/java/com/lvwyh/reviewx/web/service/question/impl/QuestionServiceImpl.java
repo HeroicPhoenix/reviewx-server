@@ -1,6 +1,7 @@
 package com.lvwyh.reviewx.web.service.question.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.lvwyh.reviewx.web.ao.question.QuestionAnalysisUpdateAO;
 import com.lvwyh.reviewx.web.ao.question.QuestionUpdateAO;
 import com.lvwyh.reviewx.web.common.exception.BusinessException;
 import com.lvwyh.reviewx.web.common.util.PageResult;
@@ -92,6 +93,8 @@ public class QuestionServiceImpl extends QuestionConvertSupport implements Quest
         question.setOption8(trimToEmpty(ao.getOption8()));
         question.setAnswerContent(toAnswerJson(answers));
         question.setAnswerSource(trimToNull(ao.getAnswerSource()));
+        question.setAnalysisContent(trimToNull(ao.getAnalysisContent()));
+        question.setAnalysisImageBase64(trimToNull(ao.getAnalysisImageBase64()));
         question.setQuestionYear(trimToNull(ao.getQuestionYear()));
         question.setQuestionSource(trimToNull(ao.getQuestionSource()));
         question.setCorrectRate(trimToNull(ao.getCorrectRate()));
@@ -100,6 +103,31 @@ public class QuestionServiceImpl extends QuestionConvertSupport implements Quest
         int updated = questionMapper.updateByIdAndUserId(question);
         if (updated != 1) {
             throw new BusinessException("保存题目失败");
+        }
+        return detail(userId, ao.getQuestionId());
+    }
+
+    /**
+     * 编辑当前用户自己的题目解析。
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public QuestionVO updateAnalysis(Long userId, QuestionAnalysisUpdateAO ao) {
+        Question existed = questionMapper.selectById(userId, ao.getQuestionId());
+        if (existed == null) {
+            throw new BusinessException(404, "题目不存在");
+        }
+
+        Question question = new Question();
+        question.setUserId(userId);
+        question.setQuestionId(ao.getQuestionId());
+        question.setAnalysisContent(trimToNull(ao.getAnalysisContent()));
+        question.setAnalysisImageBase64(trimToNull(ao.getAnalysisImageBase64()));
+        question.setUpdatedTime(LocalDateTime.now());
+
+        int updated = questionMapper.updateAnalysisByIdAndUserId(question);
+        if (updated != 1) {
+            throw new BusinessException("保存题目解析失败");
         }
         return detail(userId, ao.getQuestionId());
     }
