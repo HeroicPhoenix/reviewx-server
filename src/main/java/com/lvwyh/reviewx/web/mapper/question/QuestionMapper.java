@@ -35,6 +35,7 @@ public interface QuestionMapper {
                           @Param("questionType") String questionType,
                           @Param("questionYear") String questionYear,
                           @Param("questionSource") String questionSource,
+                          @Param("questionJoinDate") String questionJoinDate,
                           @Param("offset") int offset,
                           @Param("pageSize") int pageSize);
 
@@ -43,7 +44,8 @@ public interface QuestionMapper {
                      @Param("keyword") String keyword,
                      @Param("questionType") String questionType,
                      @Param("questionYear") String questionYear,
-                     @Param("questionSource") String questionSource);
+                     @Param("questionSource") String questionSource,
+                     @Param("questionJoinDate") String questionJoinDate);
 
     /** 按题目类型分组查询启用题目的题型列表。 */
     List<String> selectQuestionTypes(@Param("userId") Long userId);

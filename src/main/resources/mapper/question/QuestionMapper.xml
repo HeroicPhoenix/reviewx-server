@@ -5,13 +5,13 @@
     <sql id="Base_Column_List">
         QUESTION_ID, USER_ID, QUESTION_TYPE, QUESTION_CATEGORY, QUESTION_CONTENT, QUESTION_IMAGE_BASE64, OPTION_1, OPTION_2, OPTION_3, OPTION_4,
         OPTION_5, OPTION_6, OPTION_7, OPTION_8, ANSWER_CONTENT, ANSWER_SOURCE, ANALYSIS_CONTENT, ANALYSIS_IMAGE_BASE64, QUESTION_YEAR,
-        QUESTION_SOURCE, CORRECT_RATE, QUESTION_STATUS, CREATED_TIME, UPDATED_TIME
+        QUESTION_SOURCE, QUESTION_JOIN_DATE, CORRECT_RATE, QUESTION_STATUS, CREATED_TIME, UPDATED_TIME
     </sql>
     <!-- 带 q 表别名的字段清单，用于 join 查询，避免列名歧义。 -->
     <sql id="Q_Base_Column_List">
         q.QUESTION_ID, q.USER_ID, q.QUESTION_TYPE, q.QUESTION_CATEGORY, q.QUESTION_CONTENT, q.QUESTION_IMAGE_BASE64, q.OPTION_1, q.OPTION_2, q.OPTION_3, q.OPTION_4,
         q.OPTION_5, q.OPTION_6, q.OPTION_7, q.OPTION_8, q.ANSWER_CONTENT, q.ANSWER_SOURCE, q.ANALYSIS_CONTENT, q.ANALYSIS_IMAGE_BASE64, q.QUESTION_YEAR,
-        q.QUESTION_SOURCE, q.CORRECT_RATE, q.QUESTION_STATUS, q.CREATED_TIME, q.UPDATED_TIME
+        q.QUESTION_SOURCE, q.QUESTION_JOIN_DATE, q.CORRECT_RATE, q.QUESTION_STATUS, q.CREATED_TIME, q.UPDATED_TIME
     </sql>
 
     <!-- 导入题目时按 QUESTION_ID 幂等写入；重复导入会更新题目内容。 -->
@@ -19,12 +19,12 @@
         INSERT INTO QUESTION (
             QUESTION_ID, USER_ID, QUESTION_TYPE, QUESTION_CATEGORY, QUESTION_CONTENT, QUESTION_IMAGE_BASE64,
             OPTION_1, OPTION_2, OPTION_3, OPTION_4, OPTION_5, OPTION_6, OPTION_7, OPTION_8,
-            ANSWER_CONTENT, ANSWER_SOURCE, QUESTION_YEAR, QUESTION_SOURCE, CORRECT_RATE,
+            ANSWER_CONTENT, ANSWER_SOURCE, QUESTION_YEAR, QUESTION_SOURCE, QUESTION_JOIN_DATE, CORRECT_RATE,
             QUESTION_STATUS, CREATED_TIME, UPDATED_TIME
         ) VALUES (
             #{questionId}, #{userId}, #{questionType}, #{questionCategory}, #{questionContent}, #{questionImageBase64},
             #{option1}, #{option2}, #{option3}, #{option4}, #{option5}, #{option6}, #{option7}, #{option8},
-            #{answerContent}, #{answerSource}, #{questionYear}, #{questionSource}, #{correctRate},
+            #{answerContent}, #{answerSource}, #{questionYear}, #{questionSource}, #{questionJoinDate}, #{correctRate},
             #{questionStatus}, #{createdTime}, #{updatedTime}
         )
         ON DUPLICATE KEY UPDATE
@@ -44,6 +44,7 @@
             ANSWER_SOURCE = VALUES(ANSWER_SOURCE),
             QUESTION_YEAR = VALUES(QUESTION_YEAR),
             QUESTION_SOURCE = VALUES(QUESTION_SOURCE),
+            QUESTION_JOIN_DATE = VALUES(QUESTION_JOIN_DATE),
             CORRECT_RATE = VALUES(CORRECT_RATE),
             QUESTION_STATUS = VALUES(QUESTION_STATUS),
             UPDATED_TIME = VALUES(UPDATED_TIME)
@@ -109,6 +110,9 @@
         </if>
         <if test="questionSource != null and questionSource != ''">
             AND QUESTION_SOURCE = #{questionSource}
+        </if>
+        <if test="questionJoinDate != null and questionJoinDate != ''">
+            AND QUESTION_JOIN_DATE = #{questionJoinDate}
         </if>
     </sql>
 

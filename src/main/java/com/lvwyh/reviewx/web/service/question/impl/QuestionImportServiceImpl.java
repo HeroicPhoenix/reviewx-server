@@ -19,7 +19,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Enumeration;
 import java.util.Locale;
 import java.util.zip.ZipEntry;
@@ -34,6 +37,7 @@ import java.util.zip.ZipFile;
 public class QuestionImportServiceImpl implements QuestionImportService {
 
     private static final String LOGS_DIR_NAME = "logs";
+    private static final DateTimeFormatter JOIN_DATE_FORMATTER = DateTimeFormatter.BASIC_ISO_DATE;
 
     private final QuestionMapper questionMapper;
     private final ObjectMapper objectMapper;
@@ -108,6 +112,7 @@ public class QuestionImportServiceImpl implements QuestionImportService {
      */
     private void importJsonFile(Long userId, String fileName, byte[] content, QuestionImportResultVO result) {
         String questionCategory = resolveQuestionType(fileName);
+        LocalDate questionJoinDate = resolveQuestionJoinDate(fileName);
         try {
             JsonNode root = objectMapper.readTree(content);
             if (!root.isArray()) {
@@ -118,7 +123,7 @@ public class QuestionImportServiceImpl implements QuestionImportService {
             for (JsonNode item : root) {
                 index++;
                 result.increaseTotalQuestionCount();
-                importQuestion(userId, fileName, questionCategory, index, item, result);
+                importQuestion(userId, fileName, questionCategory, questionJoinDate, index, item, result);
             }
         } catch (Exception e) {
             result.addFailure(new QuestionImportFailureVO(fileName, questionCategory, null, null, "文件解析失败：" + e.getMessage()));
@@ -128,14 +133,14 @@ public class QuestionImportServiceImpl implements QuestionImportService {
     /**
      * 导入单道题目。
      */
-    private void importQuestion(Long userId, String fileName, String questionCategory, int index, JsonNode item, QuestionImportResultVO result) {
+    private void importQuestion(Long userId, String fileName, String questionCategory, LocalDate questionJoinDate, int index, JsonNode item, QuestionImportResultVO result) {
         String questionId = text(item, "id");
         if (!StringUtils.hasText(questionId)) {
             result.addMissingIdQuestion(new QuestionImportFailureVO(fileName, questionCategory, index, null, "题目缺少id"));
             return;
         }
         try {
-            Question question = toQuestion(userId, questionId, questionCategory, item);
+            Question question = toQuestion(userId, questionId, questionCategory, questionJoinDate, item);
             questionMapper.upsert(question);
             result.increaseSuccessQuestionCount();
         } catch (Exception e) {
@@ -146,7 +151,7 @@ public class QuestionImportServiceImpl implements QuestionImportService {
     /**
      * 将 JSON 节点转换成 QUESTION 表实体。
      */
-    private Question toQuestion(Long userId, String questionId, String questionCategory, JsonNode item) throws IOException {
+    private Question toQuestion(Long userId, String questionId, String questionCategory, LocalDate questionJoinDate, JsonNode item) throws IOException {
         LocalDateTime now = LocalDateTime.now();
         JsonNode options = item.get("options");
         JsonNode answer = item.get("answer");
@@ -170,6 +175,7 @@ public class QuestionImportServiceImpl implements QuestionImportService {
         question.setAnswerSource(text(item, "answer_source"));
         question.setQuestionYear(text(item, "year"));
         question.setQuestionSource(text(item, "question_source"));
+        question.setQuestionJoinDate(questionJoinDate);
         question.setCorrectRate(text(item, "correct_rate"));
         question.setQuestionStatus(1);
         question.setCreatedTime(now);
@@ -203,6 +209,31 @@ public class QuestionImportServiceImpl implements QuestionImportService {
             return parts[0];
         }
         return parts[1];
+    }
+
+    /**
+     * 从 JSON 文件名中解析题目加入日期。
+     *
+     * 文件名应为 8 位年月日，例如 20240630.json。
+     */
+    private LocalDate resolveQuestionJoinDate(String fileName) {
+        String[] parts = splitZipPath(fileName);
+        if (parts.length == 0) {
+            return null;
+        }
+        String name = parts[parts.length - 1];
+        if (!name.toLowerCase(Locale.ROOT).endsWith(".json")) {
+            return null;
+        }
+        String baseName = name.substring(0, name.length() - 5);
+        if (!baseName.matches("\\d{8}")) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(baseName, JOIN_DATE_FORMATTER);
+        } catch (DateTimeParseException e) {
+            return null;
+        }
     }
 
     /**

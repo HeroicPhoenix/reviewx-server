@@ -60,6 +60,7 @@ abstract class QuestionConvertSupport {
         vo.setAnalysisImageBase64(question.getAnalysisImageBase64());
         vo.setQuestionYear(question.getQuestionYear());
         vo.setQuestionSource(question.getQuestionSource());
+        vo.setQuestionJoinDate(question.getQuestionJoinDate());
         vo.setCorrectRate(question.getCorrectRate());
         return vo;
     }

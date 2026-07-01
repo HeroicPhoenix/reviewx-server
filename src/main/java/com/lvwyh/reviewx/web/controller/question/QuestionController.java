@@ -79,11 +79,12 @@ public class QuestionController {
                                                   @Size(max = 64, message = "题目分类最多64个字符") @RequestParam(required = false) String questionType,
                                                   @Pattern(regexp = "^$|^\\d{4}$", message = "题目年份必须是4位数字") @RequestParam(required = false) String questionYear,
                                                   @Size(max = 255, message = "题目来源最多255个字符") @RequestParam(required = false) String questionSource,
+                                                  @Pattern(regexp = "^$|^\\d{4}-\\d{2}-\\d{2}$", message = "题目加入日期格式必须为YYYY-MM-DD") @RequestParam(required = false) String questionJoinDate,
                                                   @Min(value = 1, message = "页码必须大于0") @RequestParam(required = false) Integer pageNum,
                                                   @Min(value = 1, message = "每页数量必须大于0") @Max(value = 100, message = "每页数量不能超过100") @RequestParam(required = false) Integer pageSize) {
         Long userId = LoginUserContext.require().getUserId();
-        log.info("Question search request: userId={}, keyword={}, questionType={}, questionYear={}, questionSource={}", userId, keyword, questionType, questionYear, questionSource);
-        return ApiResponse.success("查询成功", questionService.search(userId, keyword, questionType, questionYear, questionSource, pageNum, pageSize));
+        log.info("Question search request: userId={}, keyword={}, questionType={}, questionYear={}, questionSource={}, questionJoinDate={}", userId, keyword, questionType, questionYear, questionSource, questionJoinDate);
+        return ApiResponse.success("查询成功", questionService.search(userId, keyword, questionType, questionYear, questionSource, questionJoinDate, pageNum, pageSize));
     }
 
     /**

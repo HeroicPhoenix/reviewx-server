@@ -52,13 +52,13 @@ public class QuestionServiceImpl extends QuestionConvertSupport implements Quest
      * 列表不返回图片 Base64，避免大字段拖慢分页接口。
      */
     @Override
-    public PageResult<QuestionVO> search(Long userId, String keyword, String questionType, String questionYear, String questionSource, Integer pageNum, Integer pageSize) {
+    public PageResult<QuestionVO> search(Long userId, String keyword, String questionType, String questionYear, String questionSource, String questionJoinDate, Integer pageNum, Integer pageSize) {
         int validPageNum = validPageNum(pageNum);
         int validPageSize = validPageSize(pageSize);
         int offset = (validPageNum - 1) * validPageSize;
-        long total = questionMapper.countSearch(userId, keyword, questionType, questionYear, questionSource);
+        long total = questionMapper.countSearch(userId, keyword, questionType, questionYear, questionSource, questionJoinDate);
         return new PageResult<QuestionVO>(total, validPageNum, validPageSize,
-                toQuestionVOList(questionMapper.search(userId, keyword, questionType, questionYear, questionSource, offset, validPageSize), true, false));
+                toQuestionVOList(questionMapper.search(userId, keyword, questionType, questionYear, questionSource, questionJoinDate, offset, validPageSize), true, false));
     }
 
     /**
@@ -176,7 +176,7 @@ public class QuestionServiceImpl extends QuestionConvertSupport implements Quest
         int validPageNum = validPageNum(pageNum);
         int validPageSize = validPageSize(pageSize);
         int offset = (validPageNum - 1) * validPageSize;
-        long total = questionMapper.countSearch(userId, null, questionType, questionYear, questionSource);
+        long total = questionMapper.countSearch(userId, null, questionType, questionYear, questionSource, null);
         return new PageResult<QuestionVO>(total, validPageNum, validPageSize,
                 toQuestionVOList(questionMapper.selectOrder(userId, questionType, questionYear, questionSource, offset, validPageSize), false, true));
     }

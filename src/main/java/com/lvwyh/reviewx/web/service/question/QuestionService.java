@@ -18,7 +18,7 @@ public interface QuestionService {
     QuestionVO detail(Long userId, String questionId);
 
     /** 搜索题目，返回分页结果。 */
-    PageResult<QuestionVO> search(Long userId, String keyword, String questionType, String questionYear, String questionSource, Integer pageNum, Integer pageSize);
+    PageResult<QuestionVO> search(Long userId, String keyword, String questionType, String questionYear, String questionSource, String questionJoinDate, Integer pageNum, Integer pageSize);
 
     /** 编辑当前用户自己的题目。 */
     QuestionVO update(Long userId, QuestionUpdateAO ao);

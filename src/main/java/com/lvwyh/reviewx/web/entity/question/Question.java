@@ -1,5 +1,6 @@
 package com.lvwyh.reviewx.web.entity.question;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
@@ -42,6 +43,8 @@ public class Question {
     private String questionYear;
     /** 题目来源。 */
     private String questionSource;
+    /** 题目加入日期。 */
+    private LocalDate questionJoinDate;
     /** 正确率原始文本。 */
     private String correctRate;
     /** 题目状态：0禁用、1启用。 */
@@ -91,6 +94,8 @@ public class Question {
     public void setQuestionYear(String questionYear) { this.questionYear = questionYear; }
     public String getQuestionSource() { return questionSource; }
     public void setQuestionSource(String questionSource) { this.questionSource = questionSource; }
+    public LocalDate getQuestionJoinDate() { return questionJoinDate; }
+    public void setQuestionJoinDate(LocalDate questionJoinDate) { this.questionJoinDate = questionJoinDate; }
     public String getCorrectRate() { return correctRate; }
     public void setCorrectRate(String correctRate) { this.correctRate = correctRate; }
     public Integer getQuestionStatus() { return questionStatus; }
