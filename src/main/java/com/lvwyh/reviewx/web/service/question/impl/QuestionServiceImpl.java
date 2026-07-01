@@ -157,6 +157,14 @@ public class QuestionServiceImpl extends QuestionConvertSupport implements Quest
     }
 
     /**
+     * 查询加入日期下拉选项。
+     */
+    @Override
+    public List<String> questionJoinDates(Long userId) {
+        return questionMapper.selectQuestionJoinDates(userId);
+    }
+
+    /**
      * 随机取题。
      *
      * 用于普通练习模式，不返回正确答案。

@@ -56,6 +56,9 @@ public interface QuestionMapper {
     /** 按来源分组查询启用题目的来源列表。 */
     List<String> selectQuestionSources(@Param("userId") Long userId);
 
+    /** 按加入日期分组查询启用题目的加入日期列表。 */
+    List<String> selectQuestionJoinDates(@Param("userId") Long userId);
+
     /** 随机抽取题目。 */
     List<Question> selectRandom(@Param("userId") Long userId,
                                 @Param("questionType") String questionType,

@@ -145,6 +145,17 @@ public class QuestionController {
     }
 
     /**
+     * 查询加入日期下拉选项。
+     */
+    @Operation(summary = "按加入日期分组查询")
+    @RequirePermission("question:search")
+    @GetMapping("/joinDateList")
+    public ApiResponse<List<String>> joinDateList() {
+        Long userId = LoginUserContext.require().getUserId();
+        return ApiResponse.success("查询成功", questionService.questionJoinDates(userId));
+    }
+
+    /**
      * 从上传 zip 导入题目。
      *
      * 导入时会跳过 logs 目录，并将其它一级目录名作为题目类型。

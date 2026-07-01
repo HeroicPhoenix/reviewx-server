@@ -178,6 +178,17 @@
         ORDER BY QUESTION_SOURCE ASC
     </select>
 
+    <!-- 按加入日期分组，用于前端题目加入日期下拉选项。 -->
+    <select id="selectQuestionJoinDates" resultType="string">
+        SELECT DATE_FORMAT(QUESTION_JOIN_DATE, '%Y-%m-%d')
+        FROM QUESTION
+        WHERE QUESTION_STATUS = 1
+          AND USER_ID = #{userId}
+          AND QUESTION_JOIN_DATE IS NOT NULL
+        GROUP BY QUESTION_JOIN_DATE
+        ORDER BY QUESTION_JOIN_DATE DESC
+    </select>
+
     <!-- 随机抽题，用于普通随机练习。 -->
     <select id="selectRandom" resultType="com.lvwyh.reviewx.web.entity.question.Question">
         SELECT <include refid="Base_Column_List"/>
