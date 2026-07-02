@@ -6,6 +6,8 @@ import com.lvwyh.reviewx.web.ao.question.QuestionUpdateAO;
 import com.lvwyh.reviewx.web.common.exception.BusinessException;
 import com.lvwyh.reviewx.web.common.util.PageResult;
 import com.lvwyh.reviewx.web.entity.question.Question;
+import com.lvwyh.reviewx.web.entity.question.QuestionAnalysis;
+import com.lvwyh.reviewx.web.mapper.question.QuestionAnalysisMapper;
 import com.lvwyh.reviewx.web.mapper.question.QuestionMapper;
 import com.lvwyh.reviewx.web.service.question.QuestionService;
 import com.lvwyh.reviewx.web.vo.question.QuestionVO;
@@ -26,10 +28,15 @@ public class QuestionServiceImpl extends QuestionConvertSupport implements Quest
 
     /** 题目数据库访问对象。 */
     private final QuestionMapper questionMapper;
+    /** 题目解析数据库访问对象。 */
+    private final QuestionAnalysisMapper questionAnalysisMapper;
 
-    public QuestionServiceImpl(QuestionMapper questionMapper, ObjectMapper objectMapper) {
+    public QuestionServiceImpl(QuestionMapper questionMapper,
+                               QuestionAnalysisMapper questionAnalysisMapper,
+                               ObjectMapper objectMapper) {
         super(objectMapper);
         this.questionMapper = questionMapper;
+        this.questionAnalysisMapper = questionAnalysisMapper;
     }
 
     /**
@@ -77,6 +84,7 @@ public class QuestionServiceImpl extends QuestionConvertSupport implements Quest
         }
 
         Question question = new Question();
+        LocalDateTime now = LocalDateTime.now();
         question.setUserId(userId);
         question.setQuestionId(ao.getQuestionId());
         question.setQuestionType(answers.size() > 1 ? 2 : 1);
@@ -93,17 +101,16 @@ public class QuestionServiceImpl extends QuestionConvertSupport implements Quest
         question.setOption8(trimToEmpty(ao.getOption8()));
         question.setAnswerContent(toAnswerJson(answers));
         question.setAnswerSource(trimToNull(ao.getAnswerSource()));
-        question.setAnalysisContent(trimToNull(ao.getAnalysisContent()));
-        question.setAnalysisImageBase64(trimToNull(ao.getAnalysisImageBase64()));
         question.setQuestionYear(trimToNull(ao.getQuestionYear()));
         question.setQuestionSource(trimToNull(ao.getQuestionSource()));
         question.setCorrectRate(trimToNull(ao.getCorrectRate()));
-        question.setUpdatedTime(LocalDateTime.now());
+        question.setUpdatedTime(now);
 
         int updated = questionMapper.updateByIdAndUserId(question);
         if (updated != 1) {
             throw new BusinessException("保存题目失败");
         }
+        questionAnalysisMapper.upsert(toQuestionAnalysis(userId, ao.getQuestionId(), ao.getAnalysisContent(), ao.getAnalysisImageBase64(), now));
         return detail(userId, ao.getQuestionId());
     }
 
@@ -118,17 +125,7 @@ public class QuestionServiceImpl extends QuestionConvertSupport implements Quest
             throw new BusinessException(404, "题目不存在");
         }
 
-        Question question = new Question();
-        question.setUserId(userId);
-        question.setQuestionId(ao.getQuestionId());
-        question.setAnalysisContent(trimToNull(ao.getAnalysisContent()));
-        question.setAnalysisImageBase64(trimToNull(ao.getAnalysisImageBase64()));
-        question.setUpdatedTime(LocalDateTime.now());
-
-        int updated = questionMapper.updateAnalysisByIdAndUserId(question);
-        if (updated != 1) {
-            throw new BusinessException("保存题目解析失败");
-        }
+        questionAnalysisMapper.upsert(toQuestionAnalysis(userId, ao.getQuestionId(), ao.getAnalysisContent(), ao.getAnalysisImageBase64(), LocalDateTime.now()));
         return detail(userId, ao.getQuestionId());
     }
 
@@ -260,5 +257,16 @@ public class QuestionServiceImpl extends QuestionConvertSupport implements Quest
             return "";
         }
         return value.trim();
+    }
+
+    private QuestionAnalysis toQuestionAnalysis(Long userId, String questionId, String analysisContent, String analysisImageBase64, LocalDateTime now) {
+        QuestionAnalysis questionAnalysis = new QuestionAnalysis();
+        questionAnalysis.setUserId(userId);
+        questionAnalysis.setQuestionId(questionId);
+        questionAnalysis.setAnalysisContent(trimToNull(analysisContent));
+        questionAnalysis.setAnalysisImageBase64(trimToNull(analysisImageBase64));
+        questionAnalysis.setCreatedTime(now);
+        questionAnalysis.setUpdatedTime(now);
+        return questionAnalysis;
     }
 }

@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
  * 题目实体。
  *
  * 映射 question 表，字段与上传 JSON 中的题目内容、选项、答案和来源信息对应。
+ * 解析字段由查询时左关联 question_analysis 表填充。
  */
 public class Question {
 
@@ -35,9 +36,9 @@ public class Question {
     private String answerContent;
     /** 答案来源。 */
     private String answerSource;
-    /** 题目解析文本。 */
+    /** 题目解析文本，来自 QUESTION_ANALYSIS 左关联。 */
     private String analysisContent;
-    /** 题目解析图片 Base64。 */
+    /** 题目解析图片 Base64，来自 QUESTION_ANALYSIS 左关联。 */
     private String analysisImageBase64;
     /** 题目年份。 */
     private String questionYear;

@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.lvwyh.reviewx.web.mapper.question.QuestionMapper">
-    <!-- question 表完整字段清单，用于普通查询。 -->
+    <!-- question 表字段清单，用于普通查询。解析字段来自 QUESTION_ANALYSIS 左关联。 -->
     <sql id="Base_Column_List">
         QUESTION_ID, USER_ID, QUESTION_TYPE, QUESTION_CATEGORY, QUESTION_CONTENT, QUESTION_IMAGE_BASE64, OPTION_1, OPTION_2, OPTION_3, OPTION_4,
-        OPTION_5, OPTION_6, OPTION_7, OPTION_8, ANSWER_CONTENT, ANSWER_SOURCE, ANALYSIS_CONTENT, ANALYSIS_IMAGE_BASE64, QUESTION_YEAR,
+        OPTION_5, OPTION_6, OPTION_7, OPTION_8, ANSWER_CONTENT, ANSWER_SOURCE, QUESTION_YEAR,
         QUESTION_SOURCE, QUESTION_JOIN_DATE, CORRECT_RATE, QUESTION_STATUS, CREATED_TIME, UPDATED_TIME
     </sql>
     <!-- 带 q 表别名的字段清单，用于 join 查询，避免列名歧义。 -->
     <sql id="Q_Base_Column_List">
         q.QUESTION_ID, q.USER_ID, q.QUESTION_TYPE, q.QUESTION_CATEGORY, q.QUESTION_CONTENT, q.QUESTION_IMAGE_BASE64, q.OPTION_1, q.OPTION_2, q.OPTION_3, q.OPTION_4,
-        q.OPTION_5, q.OPTION_6, q.OPTION_7, q.OPTION_8, q.ANSWER_CONTENT, q.ANSWER_SOURCE, q.ANALYSIS_CONTENT, q.ANALYSIS_IMAGE_BASE64, q.QUESTION_YEAR,
+        q.OPTION_5, q.OPTION_6, q.OPTION_7, q.OPTION_8, q.ANSWER_CONTENT, q.ANSWER_SOURCE, qa.ANALYSIS_CONTENT, qa.ANALYSIS_IMAGE_BASE64, q.QUESTION_YEAR,
         q.QUESTION_SOURCE, q.QUESTION_JOIN_DATE, q.CORRECT_RATE, q.QUESTION_STATUS, q.CREATED_TIME, q.UPDATED_TIME
     </sql>
 
@@ -73,8 +73,6 @@
             OPTION_8 = #{option8},
             ANSWER_CONTENT = #{answerContent},
             ANSWER_SOURCE = #{answerSource},
-            ANALYSIS_CONTENT = #{analysisContent},
-            ANALYSIS_IMAGE_BASE64 = #{analysisImageBase64},
             QUESTION_YEAR = #{questionYear},
             QUESTION_SOURCE = #{questionSource},
             CORRECT_RATE = #{correctRate},
@@ -84,61 +82,56 @@
           AND QUESTION_STATUS = 1
     </update>
 
-    <!-- 单独编辑题目解析。 -->
-    <update id="updateAnalysisByIdAndUserId" parameterType="com.lvwyh.reviewx.web.entity.question.Question">
-        UPDATE QUESTION
-        SET ANALYSIS_CONTENT = #{analysisContent},
-            ANALYSIS_IMAGE_BASE64 = #{analysisImageBase64},
-            UPDATED_TIME = #{updatedTime}
-        WHERE QUESTION_ID = #{questionId}
-          AND USER_ID = #{userId}
-          AND QUESTION_STATUS = 1
-    </update>
-
     <!-- 题目搜索通用过滤条件：只查询启用题目，并按需过滤关键词、年份和来源。 -->
     <sql id="Search_Where">
-        USER_ID = #{userId}
-        AND QUESTION_STATUS = 1
+        q.USER_ID = #{userId}
+        AND q.QUESTION_STATUS = 1
         <if test="keyword != null and keyword != ''">
-            AND QUESTION_CONTENT LIKE CONCAT('%', #{keyword}, '%')
+            AND q.QUESTION_CONTENT LIKE CONCAT('%', #{keyword}, '%')
         </if>
         <if test="questionType != null and questionType != ''">
-            AND QUESTION_CATEGORY = #{questionType}
+            AND q.QUESTION_CATEGORY = #{questionType}
         </if>
         <if test="questionYear != null and questionYear != ''">
-            AND QUESTION_YEAR = #{questionYear}
+            AND q.QUESTION_YEAR = #{questionYear}
         </if>
         <if test="questionSource != null and questionSource != ''">
-            AND QUESTION_SOURCE = #{questionSource}
+            AND q.QUESTION_SOURCE = #{questionSource}
         </if>
         <if test="questionJoinDate != null and questionJoinDate != ''">
-            AND QUESTION_JOIN_DATE = #{questionJoinDate}
+            AND q.QUESTION_JOIN_DATE = #{questionJoinDate}
         </if>
     </sql>
 
     <!-- 按题目 ID 查询详情，详情接口会基于该结果返回答案和图片。 -->
     <select id="selectById" resultType="com.lvwyh.reviewx.web.entity.question.Question">
-        SELECT <include refid="Base_Column_List"/>
-        FROM QUESTION
-        WHERE QUESTION_ID = #{questionId}
-          AND USER_ID = #{userId}
-          AND QUESTION_STATUS = 1
+        SELECT <include refid="Q_Base_Column_List"/>
+        FROM QUESTION q
+        LEFT JOIN QUESTION_ANALYSIS qa
+          ON qa.USER_ID = q.USER_ID
+         AND qa.QUESTION_ID = q.QUESTION_ID
+        WHERE q.QUESTION_ID = #{questionId}
+          AND q.USER_ID = #{userId}
+          AND q.QUESTION_STATUS = 1
         LIMIT 1
     </select>
 
     <!-- 分页搜索题目，当前用于查看题库。 -->
     <select id="search" resultType="com.lvwyh.reviewx.web.entity.question.Question">
-        SELECT <include refid="Base_Column_List"/>
-        FROM QUESTION
+        SELECT <include refid="Q_Base_Column_List"/>
+        FROM QUESTION q
+        LEFT JOIN QUESTION_ANALYSIS qa
+          ON qa.USER_ID = q.USER_ID
+         AND qa.QUESTION_ID = q.QUESTION_ID
         WHERE <include refid="Search_Where"/>
-        ORDER BY CREATED_TIME DESC
+        ORDER BY q.CREATED_TIME DESC
         LIMIT #{offset}, #{pageSize}
     </select>
 
     <!-- 统计搜索条件下的题目数量，用于分页 total。 -->
     <select id="countSearch" resultType="long">
         SELECT COUNT(1)
-        FROM QUESTION
+        FROM QUESTION q
         WHERE <include refid="Search_Where"/>
     </select>
 
@@ -191,25 +184,28 @@
 
     <!-- 随机抽题，用于普通随机练习。 -->
     <select id="selectRandom" resultType="com.lvwyh.reviewx.web.entity.question.Question">
-        SELECT <include refid="Base_Column_List"/>
-        FROM QUESTION
-        WHERE QUESTION_STATUS = 1
-          AND USER_ID = #{userId}
+        SELECT <include refid="Q_Base_Column_List"/>
+        FROM QUESTION q
+        LEFT JOIN QUESTION_ANALYSIS qa
+          ON qa.USER_ID = q.USER_ID
+         AND qa.QUESTION_ID = q.QUESTION_ID
+        WHERE q.QUESTION_STATUS = 1
+          AND q.USER_ID = #{userId}
         <if test="questionType != null and questionType != ''">
-            AND QUESTION_CATEGORY = #{questionType}
+            AND q.QUESTION_CATEGORY = #{questionType}
         </if>
         <if test="questionYear != null and questionYear != ''">
-            AND QUESTION_YEAR = #{questionYear}
+            AND q.QUESTION_YEAR = #{questionYear}
         </if>
         <if test="questionSource != null and questionSource != ''">
-            AND QUESTION_SOURCE = #{questionSource}
+            AND q.QUESTION_SOURCE = #{questionSource}
         </if>
         <if test="randomScope == 'done'">
             AND EXISTS (
                 SELECT 1
                 FROM ANSWER_RECORD ar
                 WHERE ar.USER_ID = #{userId}
-                  AND ar.QUESTION_ID = QUESTION.QUESTION_ID
+                  AND ar.QUESTION_ID = q.QUESTION_ID
             )
         </if>
         <if test="randomScope == 'undone'">
@@ -217,7 +213,7 @@
                 SELECT 1
                 FROM ANSWER_RECORD ar
                 WHERE ar.USER_ID = #{userId}
-                  AND ar.QUESTION_ID = QUESTION.QUESTION_ID
+                  AND ar.QUESTION_ID = q.QUESTION_ID
             )
         </if>
         ORDER BY RAND()
@@ -226,20 +222,23 @@
 
     <!-- 顺序取题，用于按题库顺序刷题。 -->
     <select id="selectOrder" resultType="com.lvwyh.reviewx.web.entity.question.Question">
-        SELECT <include refid="Base_Column_List"/>
-        FROM QUESTION
-        WHERE QUESTION_STATUS = 1
-          AND USER_ID = #{userId}
+        SELECT <include refid="Q_Base_Column_List"/>
+        FROM QUESTION q
+        LEFT JOIN QUESTION_ANALYSIS qa
+          ON qa.USER_ID = q.USER_ID
+         AND qa.QUESTION_ID = q.QUESTION_ID
+        WHERE q.QUESTION_STATUS = 1
+          AND q.USER_ID = #{userId}
         <if test="questionType != null and questionType != ''">
-            AND QUESTION_CATEGORY = #{questionType}
+            AND q.QUESTION_CATEGORY = #{questionType}
         </if>
         <if test="questionYear != null and questionYear != ''">
-            AND QUESTION_YEAR = #{questionYear}
+            AND q.QUESTION_YEAR = #{questionYear}
         </if>
         <if test="questionSource != null and questionSource != ''">
-            AND QUESTION_SOURCE = #{questionSource}
+            AND q.QUESTION_SOURCE = #{questionSource}
         </if>
-        ORDER BY QUESTION_ID ASC
+        ORDER BY q.QUESTION_ID ASC
         LIMIT #{offset}, #{pageSize}
     </select>
 
@@ -253,6 +252,9 @@
             WHERE USER_ID = #{userId}
               AND IS_CORRECT = 0
         ) r ON r.QUESTION_ID = q.QUESTION_ID
+        LEFT JOIN QUESTION_ANALYSIS qa
+          ON qa.USER_ID = q.USER_ID
+         AND qa.QUESTION_ID = q.QUESTION_ID
         WHERE q.QUESTION_STATUS = 1
           AND q.USER_ID = #{userId}
         <if test="questionType != null and questionType != ''">

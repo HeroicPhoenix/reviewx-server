@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lvwyh.reviewx.web.mapper.question.QuestionAnalysisMapper">
+    <!-- 解析按题目 ID 和用户 ID 独立幂等保存，导入题目不会覆盖该表。 -->
+    <insert id="upsert" parameterType="com.lvwyh.reviewx.web.entity.question.QuestionAnalysis">
+        INSERT INTO QUESTION_ANALYSIS (
+            QUESTION_ID, USER_ID, ANALYSIS_CONTENT, ANALYSIS_IMAGE_BASE64, CREATED_TIME, UPDATED_TIME
+        ) VALUES (
+            #{questionId}, #{userId}, #{analysisContent}, #{analysisImageBase64}, #{createdTime}, #{updatedTime}
+        )
+        ON DUPLICATE KEY UPDATE
+            ANALYSIS_CONTENT = VALUES(ANALYSIS_CONTENT),
+            ANALYSIS_IMAGE_BASE64 = VALUES(ANALYSIS_IMAGE_BASE64),
+            UPDATED_TIME = VALUES(UPDATED_TIME)
+    </insert>
+</mapper>
