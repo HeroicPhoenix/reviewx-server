@@ -59,9 +59,10 @@ public class PracticeController {
                                                     @Pattern(regexp = "^$|^\\d{4}$", message = "题目年份必须是4位数字") @RequestParam(required = false) String questionYear,
                                                     @Size(max = 255, message = "题目来源最多255个字符") @RequestParam(required = false) String questionSource,
                                                     @Pattern(regexp = "^$|^(all|done|undone)$", message = "随机范围不合法") @RequestParam(required = false) String randomScope,
+                                                    @Pattern(regexp = "^$|^(all|analyzed|unanalyzed)$", message = "解析范围不合法") @RequestParam(required = false) String analysisScope,
                                                     @Min(value = 1, message = "取题数量必须大于0") @Max(value = 50, message = "取题数量不能超过50") @RequestParam(required = false) Integer size) {
         Long userId = LoginUserContext.require().getUserId();
-        return ApiResponse.success("查询成功", questionService.randomList(userId, questionType, questionYear, questionSource, randomScope, size));
+        return ApiResponse.success("查询成功", questionService.randomList(userId, questionType, questionYear, questionSource, randomScope, analysisScope, size));
     }
 
     /**

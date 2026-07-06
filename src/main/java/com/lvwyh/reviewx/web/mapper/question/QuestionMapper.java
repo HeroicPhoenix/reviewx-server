@@ -62,6 +62,7 @@ public interface QuestionMapper {
                                 @Param("questionYear") String questionYear,
                                 @Param("questionSource") String questionSource,
                                 @Param("randomScope") String randomScope,
+                                @Param("analysisScope") String analysisScope,
                                 @Param("size") int size);
 
     /** 按题目 ID 顺序分页查询题目。 */

@@ -216,6 +216,21 @@
                   AND ar.QUESTION_ID = q.QUESTION_ID
             )
         </if>
+        <if test="analysisScope == 'analyzed'">
+            AND (
+                (qa.ANALYSIS_CONTENT IS NOT NULL AND qa.ANALYSIS_CONTENT != '')
+                OR (qa.ANALYSIS_IMAGE_BASE64 IS NOT NULL AND qa.ANALYSIS_IMAGE_BASE64 != '')
+            )
+        </if>
+        <if test="analysisScope == 'unanalyzed'">
+            AND (
+                qa.QUESTION_ID IS NULL
+                OR (
+                    (qa.ANALYSIS_CONTENT IS NULL OR qa.ANALYSIS_CONTENT = '')
+                    AND (qa.ANALYSIS_IMAGE_BASE64 IS NULL OR qa.ANALYSIS_IMAGE_BASE64 = '')
+                )
+            )
+        </if>
         ORDER BY RAND()
         LIMIT #{size}
     </select>

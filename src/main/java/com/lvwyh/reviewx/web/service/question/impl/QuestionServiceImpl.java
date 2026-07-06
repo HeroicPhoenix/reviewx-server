@@ -167,8 +167,8 @@ public class QuestionServiceImpl extends QuestionConvertSupport implements Quest
      * 用于普通练习模式，不返回正确答案。
      */
     @Override
-    public List<QuestionVO> randomList(Long userId, String questionType, String questionYear, String questionSource, String randomScope, Integer size) {
-        return toQuestionVOList(questionMapper.selectRandom(userId, questionType, questionYear, questionSource, validRandomScope(randomScope), validSize(size)), false, true);
+    public List<QuestionVO> randomList(Long userId, String questionType, String questionYear, String questionSource, String randomScope, String analysisScope, Integer size) {
+        return toQuestionVOList(questionMapper.selectRandom(userId, questionType, questionYear, questionSource, validRandomScope(randomScope), validAnalysisScope(analysisScope), validSize(size)), false, true);
     }
 
     /**
@@ -240,6 +240,13 @@ public class QuestionServiceImpl extends QuestionConvertSupport implements Quest
     private String validRandomScope(String randomScope) {
         if ("done".equals(randomScope) || "undone".equals(randomScope)) {
             return randomScope;
+        }
+        return "all";
+    }
+
+    private String validAnalysisScope(String analysisScope) {
+        if ("analyzed".equals(analysisScope) || "unanalyzed".equals(analysisScope)) {
+            return analysisScope;
         }
         return "all";
     }
