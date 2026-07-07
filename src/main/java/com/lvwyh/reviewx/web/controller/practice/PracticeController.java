@@ -58,11 +58,12 @@ public class PracticeController {
     public ApiResponse<List<QuestionVO>> randomList(@Size(max = 64, message = "题目分类最多64个字符") @RequestParam(required = false) String questionType,
                                                     @Pattern(regexp = "^$|^\\d{4}$", message = "题目年份必须是4位数字") @RequestParam(required = false) String questionYear,
                                                     @Size(max = 255, message = "题目来源最多255个字符") @RequestParam(required = false) String questionSource,
+                                                    @Pattern(regexp = "^$|^\\d{4}-\\d{2}-\\d{2}$", message = "题目加入日期格式必须是yyyy-MM-dd") @RequestParam(required = false) String questionJoinDate,
                                                     @Pattern(regexp = "^$|^(all|done|undone)$", message = "随机范围不合法") @RequestParam(required = false) String randomScope,
                                                     @Pattern(regexp = "^$|^(all|analyzed|unanalyzed)$", message = "解析范围不合法") @RequestParam(required = false) String analysisScope,
                                                     @Min(value = 1, message = "取题数量必须大于0") @Max(value = 50, message = "取题数量不能超过50") @RequestParam(required = false) Integer size) {
         Long userId = LoginUserContext.require().getUserId();
-        return ApiResponse.success("查询成功", questionService.randomList(userId, questionType, questionYear, questionSource, randomScope, analysisScope, size));
+        return ApiResponse.success("查询成功", questionService.randomList(userId, questionType, questionYear, questionSource, questionJoinDate, randomScope, analysisScope, size));
     }
 
     /**
@@ -74,10 +75,11 @@ public class PracticeController {
     public ApiResponse<PageResult<QuestionVO>> orderList(@Size(max = 64, message = "题目分类最多64个字符") @RequestParam(required = false) String questionType,
                                                      @Pattern(regexp = "^$|^\\d{4}$", message = "题目年份必须是4位数字") @RequestParam(required = false) String questionYear,
                                                      @Size(max = 255, message = "题目来源最多255个字符") @RequestParam(required = false) String questionSource,
+                                                     @Pattern(regexp = "^$|^\\d{4}-\\d{2}-\\d{2}$", message = "题目加入日期格式必须是yyyy-MM-dd") @RequestParam(required = false) String questionJoinDate,
                                                      @Min(value = 1, message = "页码必须大于0") @RequestParam(required = false) Integer pageNum,
                                                      @Min(value = 1, message = "每页数量必须大于0") @Max(value = 100, message = "每页数量不能超过100") @RequestParam(required = false) Integer pageSize) {
         Long userId = LoginUserContext.require().getUserId();
-        return ApiResponse.success("查询成功", questionService.orderList(userId, questionType, questionYear, questionSource, pageNum, pageSize));
+        return ApiResponse.success("查询成功", questionService.orderList(userId, questionType, questionYear, questionSource, questionJoinDate, pageNum, pageSize));
     }
 
     /**
@@ -91,9 +93,10 @@ public class PracticeController {
     public ApiResponse<List<QuestionVO>> wrongList(@Size(max = 64, message = "题目分类最多64个字符") @RequestParam(required = false) String questionType,
                                                    @Pattern(regexp = "^$|^\\d{4}$", message = "题目年份必须是4位数字") @RequestParam(required = false) String questionYear,
                                                    @Size(max = 255, message = "题目来源最多255个字符") @RequestParam(required = false) String questionSource,
+                                                   @Pattern(regexp = "^$|^\\d{4}-\\d{2}-\\d{2}$", message = "题目加入日期格式必须是yyyy-MM-dd") @RequestParam(required = false) String questionJoinDate,
                                                    @Min(value = 1, message = "取题数量必须大于0") @Max(value = 50, message = "取题数量不能超过50") @RequestParam(required = false) Integer size) {
         Long userId = LoginUserContext.require().getUserId();
-        return ApiResponse.success("查询成功", questionService.wrongList(userId, questionType, questionYear, questionSource, size));
+        return ApiResponse.success("查询成功", questionService.wrongList(userId, questionType, questionYear, questionSource, questionJoinDate, size));
     }
 
     /**

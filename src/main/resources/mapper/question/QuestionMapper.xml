@@ -200,6 +200,9 @@
         <if test="questionSource != null and questionSource != ''">
             AND q.QUESTION_SOURCE = #{questionSource}
         </if>
+        <if test="questionJoinDate != null and questionJoinDate != ''">
+            AND q.QUESTION_JOIN_DATE = #{questionJoinDate}
+        </if>
         <if test="randomScope == 'done'">
             AND EXISTS (
                 SELECT 1
@@ -253,6 +256,9 @@
         <if test="questionSource != null and questionSource != ''">
             AND q.QUESTION_SOURCE = #{questionSource}
         </if>
+        <if test="questionJoinDate != null and questionJoinDate != ''">
+            AND q.QUESTION_JOIN_DATE = #{questionJoinDate}
+        </if>
         ORDER BY q.QUESTION_ID ASC
         LIMIT #{offset}, #{pageSize}
     </select>
@@ -280,6 +286,9 @@
         </if>
         <if test="questionSource != null and questionSource != ''">
             AND q.QUESTION_SOURCE = #{questionSource}
+        </if>
+        <if test="questionJoinDate != null and questionJoinDate != ''">
+            AND q.QUESTION_JOIN_DATE = #{questionJoinDate}
         </if>
         ORDER BY RAND()
         LIMIT #{size}

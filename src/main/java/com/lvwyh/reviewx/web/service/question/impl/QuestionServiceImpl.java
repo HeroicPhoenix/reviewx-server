@@ -167,8 +167,8 @@ public class QuestionServiceImpl extends QuestionConvertSupport implements Quest
      * 用于普通练习模式，不返回正确答案。
      */
     @Override
-    public List<QuestionVO> randomList(Long userId, String questionType, String questionYear, String questionSource, String randomScope, String analysisScope, Integer size) {
-        return toQuestionVOList(questionMapper.selectRandom(userId, questionType, questionYear, questionSource, validRandomScope(randomScope), validAnalysisScope(analysisScope), validSize(size)), false, true);
+    public List<QuestionVO> randomList(Long userId, String questionType, String questionYear, String questionSource, String questionJoinDate, String randomScope, String analysisScope, Integer size) {
+        return toQuestionVOList(questionMapper.selectRandom(userId, questionType, questionYear, questionSource, questionJoinDate, validRandomScope(randomScope), validAnalysisScope(analysisScope), validSize(size)), false, true);
     }
 
     /**
@@ -177,13 +177,13 @@ public class QuestionServiceImpl extends QuestionConvertSupport implements Quest
      * 用于按题库顺序刷题，不返回正确答案。
      */
     @Override
-    public PageResult<QuestionVO> orderList(Long userId, String questionType, String questionYear, String questionSource, Integer pageNum, Integer pageSize) {
+    public PageResult<QuestionVO> orderList(Long userId, String questionType, String questionYear, String questionSource, String questionJoinDate, Integer pageNum, Integer pageSize) {
         int validPageNum = validPageNum(pageNum);
         int validPageSize = validPageSize(pageSize);
         int offset = (validPageNum - 1) * validPageSize;
-        long total = questionMapper.countSearch(userId, null, questionType, questionYear, questionSource, null);
+        long total = questionMapper.countSearch(userId, null, questionType, questionYear, questionSource, questionJoinDate);
         return new PageResult<QuestionVO>(total, validPageNum, validPageSize,
-                toQuestionVOList(questionMapper.selectOrder(userId, questionType, questionYear, questionSource, offset, validPageSize), false, true));
+                toQuestionVOList(questionMapper.selectOrder(userId, questionType, questionYear, questionSource, questionJoinDate, offset, validPageSize), false, true));
     }
 
     /**
@@ -192,8 +192,8 @@ public class QuestionServiceImpl extends QuestionConvertSupport implements Quest
      * 只从当前用户历史错误记录关联的题目中抽取。
      */
     @Override
-    public List<QuestionVO> wrongList(Long userId, String questionType, String questionYear, String questionSource, Integer size) {
-        return toQuestionVOList(questionMapper.selectWrong(userId, questionType, questionYear, questionSource, validSize(size)), false, true);
+    public List<QuestionVO> wrongList(Long userId, String questionType, String questionYear, String questionSource, String questionJoinDate, Integer size) {
+        return toQuestionVOList(questionMapper.selectWrong(userId, questionType, questionYear, questionSource, questionJoinDate, validSize(size)), false, true);
     }
 
     /**

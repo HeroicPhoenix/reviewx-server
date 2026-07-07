@@ -61,6 +61,7 @@ public interface QuestionMapper {
                                 @Param("questionType") String questionType,
                                 @Param("questionYear") String questionYear,
                                 @Param("questionSource") String questionSource,
+                                @Param("questionJoinDate") String questionJoinDate,
                                 @Param("randomScope") String randomScope,
                                 @Param("analysisScope") String analysisScope,
                                 @Param("size") int size);
@@ -70,6 +71,7 @@ public interface QuestionMapper {
                                @Param("questionType") String questionType,
                                @Param("questionYear") String questionYear,
                                @Param("questionSource") String questionSource,
+                               @Param("questionJoinDate") String questionJoinDate,
                                @Param("offset") int offset,
                                @Param("pageSize") int pageSize);
 
@@ -78,5 +80,6 @@ public interface QuestionMapper {
                                @Param("questionType") String questionType,
                                @Param("questionYear") String questionYear,
                                @Param("questionSource") String questionSource,
+                               @Param("questionJoinDate") String questionJoinDate,
                                @Param("size") int size);
 }
