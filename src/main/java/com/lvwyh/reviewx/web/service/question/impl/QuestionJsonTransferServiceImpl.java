@@ -17,6 +17,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
@@ -44,13 +45,22 @@ public class QuestionJsonTransferServiceImpl implements QuestionJsonTransferServ
 
     @Override
     public JsonNode exportJson(Long userId, String scope) {
+        return exportJson(userId, scope, null);
+    }
+
+    @Override
+    public JsonNode exportJson(Long userId, String scope, ProgressListener listener) {
         String validScope = validScope(scope);
         ObjectNode root = objectMapper.createObjectNode();
         root.put("schemaVersion", 1);
         root.put("scope", validScope);
         root.put("exportedAt", LocalDateTime.now().toString());
         ArrayNode items = root.putArray("items");
-        for (Question question : questionMapper.selectAllForExport(userId)) {
+        java.util.List<Question> questions = questionMapper.selectAllForExport(userId);
+        int total = questions.size();
+        int processed = 0;
+        notifyProgress(listener, processed, total);
+        for (Question question : questions) {
             ObjectNode item = items.addObject();
             item.put("questionId", question.getQuestionId());
             if (!SCOPE_ANALYSIS.equals(validScope)) {
@@ -60,6 +70,7 @@ public class QuestionJsonTransferServiceImpl implements QuestionJsonTransferServ
                 putNullable(item, "analysisContent", question.getAnalysisContent());
                 putNullable(item, "analysisImageBase64", question.getAnalysisImageBase64());
             }
+            notifyProgress(listener, ++processed, total);
         }
         return root;
     }
@@ -67,11 +78,23 @@ public class QuestionJsonTransferServiceImpl implements QuestionJsonTransferServ
     @Override
     @Transactional(rollbackFor = Exception.class)
     public QuestionJsonImportResultVO importJson(Long userId, String scope, MultipartFile file) {
-        String validScope = validScope(scope);
         validateFile(file);
+        try {
+            return importJson(userId, scope, file.getInputStream(), file.getOriginalFilename(), null);
+        } catch (IOException e) {
+            throw new BusinessException(400, "JSON 文件读取失败：" + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public QuestionJsonImportResultVO importJson(Long userId, String scope, InputStream inputStream,
+                                                 String fileName, ProgressListener listener) {
+        String validScope = validScope(scope);
+        validateFileName(fileName);
         JsonNode root;
         try {
-            root = objectMapper.readTree(file.getInputStream());
+            root = objectMapper.readTree(inputStream);
         } catch (IOException e) {
             throw new BusinessException(400, "JSON 文件解析失败：" + e.getMessage(), e);
         }
@@ -81,7 +104,9 @@ public class QuestionJsonTransferServiceImpl implements QuestionJsonTransferServ
         }
 
         QuestionJsonImportResultVO result = new QuestionJsonImportResultVO();
+        int total = items.size();
         int index = 0;
+        notifyProgress(listener, 0, total);
         for (JsonNode item : items) {
             index++;
             result.increaseTotalCount();
@@ -103,6 +128,7 @@ public class QuestionJsonTransferServiceImpl implements QuestionJsonTransferServ
                 String idText = StringUtils.hasText(questionId) ? "，questionId=" + questionId : "";
                 result.addFailure("第 " + index + " 项" + idText + "：" + e.getMessage());
             }
+            notifyProgress(listener, index, total);
         }
         return result;
     }
@@ -194,10 +220,17 @@ public class QuestionJsonTransferServiceImpl implements QuestionJsonTransferServ
         if (file == null || file.isEmpty()) {
             throw new BusinessException(400, "请选择要导入的 JSON 文件");
         }
-        String name = file.getOriginalFilename();
+        validateFileName(file.getOriginalFilename());
+    }
+
+    private void validateFileName(String name) {
         if (!StringUtils.hasText(name) || !name.toLowerCase(Locale.ROOT).endsWith(".json")) {
             throw new BusinessException(400, "仅支持上传 .json 文件");
         }
+    }
+
+    private void notifyProgress(ProgressListener listener, int processed, int total) {
+        if (listener != null) listener.update(processed, total);
     }
 
     private LocalDate parseDate(String value) {

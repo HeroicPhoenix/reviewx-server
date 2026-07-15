@@ -10,14 +10,20 @@ import com.lvwyh.reviewx.web.security.RequirePermission;
 import com.lvwyh.reviewx.web.service.question.QuestionImportService;
 import com.lvwyh.reviewx.web.service.question.QuestionJsonTransferService;
 import com.lvwyh.reviewx.web.service.question.QuestionService;
+import com.lvwyh.reviewx.web.service.question.QuestionTransferTaskService;
 import com.lvwyh.reviewx.web.vo.question.QuestionImportResultVO;
 import com.lvwyh.reviewx.web.vo.question.QuestionJsonImportResultVO;
+import com.lvwyh.reviewx.web.vo.question.QuestionTransferTaskVO;
 import com.lvwyh.reviewx.web.vo.question.QuestionVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -50,13 +56,16 @@ public class QuestionController {
     private final QuestionService questionService;
     private final QuestionImportService questionImportService;
     private final QuestionJsonTransferService questionJsonTransferService;
+    private final QuestionTransferTaskService questionTransferTaskService;
 
     public QuestionController(QuestionService questionService,
                               QuestionImportService questionImportService,
-                              QuestionJsonTransferService questionJsonTransferService) {
+                              QuestionJsonTransferService questionJsonTransferService,
+                              QuestionTransferTaskService questionTransferTaskService) {
         this.questionService = questionService;
         this.questionImportService = questionImportService;
         this.questionJsonTransferService = questionJsonTransferService;
+        this.questionTransferTaskService = questionTransferTaskService;
     }
 
     /**
@@ -200,5 +209,48 @@ public class QuestionController {
         log.info("Question JSON import request: userId={}, filename={}, size={}, scope={}",
                 userId, file.getOriginalFilename(), file.getSize(), scope);
         return ApiResponse.success("导入完成", questionJsonTransferService.importJson(userId, scope, file));
+    }
+
+    /** 创建带进度的 JSON 导出任务。 */
+    @Operation(summary = "创建题库 JSON 导出任务")
+    @RequirePermission("question:view")
+    @PostMapping("/exportJsonTask")
+    public ApiResponse<QuestionTransferTaskVO> startExportJsonTask(@RequestParam String scope) {
+        Long userId = LoginUserContext.require().getUserId();
+        return ApiResponse.success("导出任务已创建", questionTransferTaskService.startExport(userId, scope));
+    }
+
+    /** 上传 JSON 并创建带进度的导入任务。 */
+    @Operation(summary = "创建题库 JSON 导入任务")
+    @RequirePermission("question:import")
+    @PostMapping("/importJsonTask")
+    public ApiResponse<QuestionTransferTaskVO> startImportJsonTask(@RequestParam("file") MultipartFile file,
+                                                                    @RequestParam String scope) {
+        Long userId = LoginUserContext.require().getUserId();
+        return ApiResponse.success("导入任务已创建", questionTransferTaskService.startImport(userId, scope, file));
+    }
+
+    /** 查询当前用户导入导出任务的真实进度。 */
+    @Operation(summary = "查询题库 JSON 任务进度")
+    @RequirePermission("question:view")
+    @GetMapping("/jsonTransferTask")
+    public ApiResponse<QuestionTransferTaskVO> jsonTransferTask(@RequestParam String taskId) {
+        Long userId = LoginUserContext.require().getUserId();
+        return ApiResponse.success(questionTransferTaskService.status(userId, taskId));
+    }
+
+    /** 下载已完成的 JSON 导出文件。 */
+    @Operation(summary = "下载题库 JSON 导出文件")
+    @RequirePermission("question:view")
+    @GetMapping("/downloadJson")
+    public ResponseEntity<Resource> downloadJson(@RequestParam String taskId) throws java.io.IOException {
+        Long userId = LoginUserContext.require().getUserId();
+        QuestionTransferTaskVO task = questionTransferTaskService.status(userId, taskId);
+        Resource resource = questionTransferTaskService.exportFile(userId, taskId);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .contentLength(resource.contentLength())
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + task.getFileName() + "\"")
+                .body(resource);
     }
 }
