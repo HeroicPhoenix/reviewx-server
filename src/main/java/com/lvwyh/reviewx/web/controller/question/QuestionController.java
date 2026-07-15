@@ -1,5 +1,6 @@
 package com.lvwyh.reviewx.web.controller.question;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.lvwyh.reviewx.web.ao.question.QuestionUpdateAO;
 import com.lvwyh.reviewx.web.ao.question.QuestionAnalysisUpdateAO;
 import com.lvwyh.reviewx.web.common.response.ApiResponse;
@@ -7,8 +8,10 @@ import com.lvwyh.reviewx.web.common.util.PageResult;
 import com.lvwyh.reviewx.web.security.LoginUserContext;
 import com.lvwyh.reviewx.web.security.RequirePermission;
 import com.lvwyh.reviewx.web.service.question.QuestionImportService;
+import com.lvwyh.reviewx.web.service.question.QuestionJsonTransferService;
 import com.lvwyh.reviewx.web.service.question.QuestionService;
 import com.lvwyh.reviewx.web.vo.question.QuestionImportResultVO;
+import com.lvwyh.reviewx.web.vo.question.QuestionJsonImportResultVO;
 import com.lvwyh.reviewx.web.vo.question.QuestionVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -46,11 +49,14 @@ public class QuestionController {
 
     private final QuestionService questionService;
     private final QuestionImportService questionImportService;
+    private final QuestionJsonTransferService questionJsonTransferService;
 
     public QuestionController(QuestionService questionService,
-                              QuestionImportService questionImportService) {
+                              QuestionImportService questionImportService,
+                              QuestionJsonTransferService questionJsonTransferService) {
         this.questionService = questionService;
         this.questionImportService = questionImportService;
+        this.questionJsonTransferService = questionJsonTransferService;
     }
 
     /**
@@ -168,5 +174,31 @@ public class QuestionController {
         Long userId = LoginUserContext.require().getUserId();
         log.info("Question import zip upload request: userId={}, filename={}, size={}, clearBeforeImport={}", userId, file.getOriginalFilename(), file.getSize(), clearBeforeImport);
         return ApiResponse.success("导入完成", questionImportService.importFromZip(userId, file, Boolean.TRUE.equals(clearBeforeImport)));
+    }
+
+    /**
+     * 将当前用户的题库导出为 JSON 数据。
+     */
+    @Operation(summary = "导出题库 JSON")
+    @RequirePermission("question:view")
+    @GetMapping("/exportJson")
+    public ApiResponse<JsonNode> exportJson(@RequestParam String scope) {
+        Long userId = LoginUserContext.require().getUserId();
+        log.info("Question JSON export request: userId={}, scope={}", userId, scope);
+        return ApiResponse.success("导出成功", questionJsonTransferService.exportJson(userId, scope));
+    }
+
+    /**
+     * 从 JSON 文件向当前用户题库导入题目或解析。
+     */
+    @Operation(summary = "导入题库 JSON")
+    @RequirePermission("question:import")
+    @PostMapping("/importJson")
+    public ApiResponse<QuestionJsonImportResultVO> importJson(@RequestParam("file") MultipartFile file,
+                                                               @RequestParam String scope) {
+        Long userId = LoginUserContext.require().getUserId();
+        log.info("Question JSON import request: userId={}, filename={}, size={}, scope={}",
+                userId, file.getOriginalFilename(), file.getSize(), scope);
+        return ApiResponse.success("导入完成", questionJsonTransferService.importJson(userId, scope, file));
     }
 }
