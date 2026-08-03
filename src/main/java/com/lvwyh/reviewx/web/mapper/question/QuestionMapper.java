@@ -75,8 +75,18 @@ public interface QuestionMapper {
                                @Param("questionYear") String questionYear,
                                @Param("questionSource") String questionSource,
                                @Param("questionJoinDate") String questionJoinDate,
+                               @Param("analysisScope") String analysisScope,
+                               @Param("orderDirection") String orderDirection,
                                @Param("offset") int offset,
                                @Param("pageSize") int pageSize);
+
+    /** 统计顺序刷题筛选条件下的题目总数。 */
+    long countOrder(@Param("userId") Long userId,
+                    @Param("questionType") String questionType,
+                    @Param("questionYear") String questionYear,
+                    @Param("questionSource") String questionSource,
+                    @Param("questionJoinDate") String questionJoinDate,
+                    @Param("analysisScope") String analysisScope);
 
     /** 从当前用户历史错题中随机抽取题目。 */
     List<Question> selectWrong(@Param("userId") Long userId,

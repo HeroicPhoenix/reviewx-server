@@ -177,13 +177,15 @@ public class QuestionServiceImpl extends QuestionConvertSupport implements Quest
      * 用于按题库顺序刷题，不返回正确答案。
      */
     @Override
-    public PageResult<QuestionVO> orderList(Long userId, String questionType, String questionYear, String questionSource, String questionJoinDate, Integer pageNum, Integer pageSize) {
+    public PageResult<QuestionVO> orderList(Long userId, String questionType, String questionYear, String questionSource, String questionJoinDate, String analysisScope, String orderDirection, Integer pageNum, Integer pageSize) {
         int validPageNum = validPageNum(pageNum);
         int validPageSize = validPageSize(pageSize);
         int offset = (validPageNum - 1) * validPageSize;
-        long total = questionMapper.countSearch(userId, null, questionType, questionYear, questionSource, questionJoinDate);
+        String validAnalysisScope = validAnalysisScope(analysisScope);
+        String validOrderDirection = validOrderDirection(orderDirection);
+        long total = questionMapper.countOrder(userId, questionType, questionYear, questionSource, questionJoinDate, validAnalysisScope);
         return new PageResult<QuestionVO>(total, validPageNum, validPageSize,
-                toQuestionVOList(questionMapper.selectOrder(userId, questionType, questionYear, questionSource, questionJoinDate, offset, validPageSize), false, true));
+                toQuestionVOList(questionMapper.selectOrder(userId, questionType, questionYear, questionSource, questionJoinDate, validAnalysisScope, validOrderDirection, offset, validPageSize), false, true));
     }
 
     /**
@@ -249,6 +251,10 @@ public class QuestionServiceImpl extends QuestionConvertSupport implements Quest
             return analysisScope;
         }
         return "all";
+    }
+
+    private String validOrderDirection(String orderDirection) {
+        return "desc".equals(orderDirection) ? "desc" : "asc";
     }
 
     private String trimToNull(String value) {
