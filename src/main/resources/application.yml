@@ -61,4 +61,4 @@ mybatis:
 reviewx:
   jwt:
     secret: ${REVIEWX_JWT_SECRET:ReviewXJwtSecretKeyForLocalDevelopmentOnly123456}
-    expire-seconds: ${REVIEWX_JWT_EXPIRE_SECONDS:7200}
+    expire-seconds: ${REVIEWX_JWT_EXPIRE_SECONDS:86400}

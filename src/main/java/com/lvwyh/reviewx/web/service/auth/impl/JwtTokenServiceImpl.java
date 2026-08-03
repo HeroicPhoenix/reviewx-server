@@ -56,7 +56,7 @@ public class JwtTokenServiceImpl implements TokenService {
     @Override
     public String generate(Long userId, String username, Integer tokenVersion) {
         long now = System.currentTimeMillis();
-        long expireMillis = (jwtProperties.getExpireSeconds() == null ? 7200L : jwtProperties.getExpireSeconds()) * 1000L;
+        long expireMillis = (jwtProperties.getExpireSeconds() == null ? 86400L : jwtProperties.getExpireSeconds()) * 1000L;
         return Jwts.builder()
                 .claim(CLAIM_USER_ID, userId)
                 .claim(CLAIM_USERNAME, username)

@@ -17,7 +17,7 @@ public class JwtProperties {
     private String secret = DEFAULT_SECRET;
 
     /** Token 有效期，单位秒。 */
-    private Long expireSeconds = 7200L;
+    private Long expireSeconds = 86400L;
 
     public String getSecret() {
         return secret;
