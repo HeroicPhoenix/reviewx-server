@@ -272,10 +272,10 @@
             AND q.QUESTION_JOIN_DATE = #{questionJoinDate}
         </if>
         <include refid="Analysis_Scope_Filter"/>
-        ORDER BY q.QUESTION_ID
+        ORDER BY q.QUESTION_JOIN_DATE
         <choose>
-            <when test="orderDirection == 'desc'">DESC</when>
-            <otherwise>ASC</otherwise>
+            <when test="orderDirection == 'desc'">DESC, q.QUESTION_ID DESC</when>
+            <otherwise>ASC, q.QUESTION_ID ASC</otherwise>
         </choose>
         LIMIT #{offset}, #{pageSize}
     </select>
