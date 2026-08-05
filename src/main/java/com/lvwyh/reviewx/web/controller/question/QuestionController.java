@@ -15,6 +15,7 @@ import com.lvwyh.reviewx.web.vo.question.QuestionImportResultVO;
 import com.lvwyh.reviewx.web.vo.question.QuestionJsonImportResultVO;
 import com.lvwyh.reviewx.web.vo.question.QuestionTransferTaskVO;
 import com.lvwyh.reviewx.web.vo.question.QuestionVO;
+import com.lvwyh.reviewx.web.vo.question.QuestionOverviewStatVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.logging.log4j.LogManager;
@@ -168,6 +169,17 @@ public class QuestionController {
     public ApiResponse<List<String>> joinDateList() {
         Long userId = LoginUserContext.require().getUserId();
         return ApiResponse.success("查询成功", questionService.questionJoinDates(userId));
+    }
+
+    /**
+     * 查询概览页题库统计。
+     */
+    @Operation(summary = "查询题库概览统计")
+    @RequirePermission("question:search")
+    @GetMapping("/overviewStat")
+    public ApiResponse<QuestionOverviewStatVO> overviewStat() {
+        Long userId = LoginUserContext.require().getUserId();
+        return ApiResponse.success("查询成功", questionService.overviewStat(userId));
     }
 
     /**

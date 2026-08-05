@@ -1,6 +1,8 @@
 package com.lvwyh.reviewx.web.mapper.question;
 
 import com.lvwyh.reviewx.web.entity.question.Question;
+import com.lvwyh.reviewx.web.vo.question.QuestionCategoryStatVO;
+import com.lvwyh.reviewx.web.vo.question.QuestionDailyStatVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -58,6 +60,12 @@ public interface QuestionMapper {
 
     /** 按加入日期分组查询启用题目的加入日期列表。 */
     List<String> selectQuestionJoinDates(@Param("userId") Long userId);
+
+    /** 按数据库分类字段统计当前用户的启用题目数量。 */
+    List<QuestionCategoryStatVO> selectCategoryCounts(@Param("userId") Long userId);
+
+    /** 按加入日期统计当前用户每日新增的启用题目数量。 */
+    List<QuestionDailyStatVO> selectDailyCounts(@Param("userId") Long userId);
 
     /** 随机抽取题目。 */
     List<Question> selectRandom(@Param("userId") Long userId,

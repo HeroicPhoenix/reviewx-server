@@ -194,6 +194,29 @@
         ORDER BY QUESTION_JOIN_DATE DESC
     </select>
 
+    <!-- 概览饼图：按题目分类统计数量，空分类合并为“未分类”。 -->
+    <select id="selectCategoryCounts" resultType="com.lvwyh.reviewx.web.vo.question.QuestionCategoryStatVO">
+        SELECT COALESCE(NULLIF(TRIM(QUESTION_CATEGORY), ''), '未分类') AS category,
+               COUNT(1) AS `count`
+        FROM QUESTION
+        WHERE QUESTION_STATUS = 1
+          AND USER_ID = #{userId}
+        GROUP BY COALESCE(NULLIF(TRIM(QUESTION_CATEGORY), ''), '未分类')
+        ORDER BY `count` DESC, category ASC
+    </select>
+
+    <!-- 概览折线图：按题目加入日期统计每日新增数量。 -->
+    <select id="selectDailyCounts" resultType="com.lvwyh.reviewx.web.vo.question.QuestionDailyStatVO">
+        SELECT DATE_FORMAT(QUESTION_JOIN_DATE, '%Y-%m-%d') AS date,
+               COUNT(1) AS `count`
+        FROM QUESTION
+        WHERE QUESTION_STATUS = 1
+          AND USER_ID = #{userId}
+          AND QUESTION_JOIN_DATE IS NOT NULL
+        GROUP BY QUESTION_JOIN_DATE
+        ORDER BY QUESTION_JOIN_DATE ASC
+    </select>
+
     <!-- 随机抽题，用于普通随机练习。 -->
     <select id="selectRandom" resultType="com.lvwyh.reviewx.web.entity.question.Question">
         SELECT <include refid="Q_Base_Column_List"/>

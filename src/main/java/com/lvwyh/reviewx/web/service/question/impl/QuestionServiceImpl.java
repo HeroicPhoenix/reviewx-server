@@ -11,6 +11,7 @@ import com.lvwyh.reviewx.web.mapper.question.QuestionAnalysisMapper;
 import com.lvwyh.reviewx.web.mapper.question.QuestionMapper;
 import com.lvwyh.reviewx.web.service.question.QuestionService;
 import com.lvwyh.reviewx.web.vo.question.QuestionVO;
+import com.lvwyh.reviewx.web.vo.question.QuestionOverviewStatVO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -159,6 +160,18 @@ public class QuestionServiceImpl extends QuestionConvertSupport implements Quest
     @Override
     public List<String> questionJoinDates(Long userId) {
         return questionMapper.selectQuestionJoinDates(userId);
+    }
+
+    /**
+     * 查询概览页题库统计，通过数据库分组一次获取图表数据。
+     */
+    @Override
+    public QuestionOverviewStatVO overviewStat(Long userId) {
+        QuestionOverviewStatVO result = new QuestionOverviewStatVO();
+        result.setTotalCount(questionMapper.countSearch(userId, null, null, null, null, null));
+        result.setCategoryCounts(questionMapper.selectCategoryCounts(userId));
+        result.setDailyCounts(questionMapper.selectDailyCounts(userId));
+        return result;
     }
 
     /**

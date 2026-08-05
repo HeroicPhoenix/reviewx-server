@@ -4,6 +4,7 @@ import com.lvwyh.reviewx.web.common.util.PageResult;
 import com.lvwyh.reviewx.web.ao.question.QuestionAnalysisUpdateAO;
 import com.lvwyh.reviewx.web.ao.question.QuestionUpdateAO;
 import com.lvwyh.reviewx.web.vo.question.QuestionVO;
+import com.lvwyh.reviewx.web.vo.question.QuestionOverviewStatVO;
 
 import java.util.List;
 
@@ -37,6 +38,9 @@ public interface QuestionService {
 
     /** 查询启用题目的加入日期下拉列表。 */
     List<String> questionJoinDates(Long userId);
+
+    /** 查询概览页所需的题库分类和每日新增统计。 */
+    QuestionOverviewStatVO overviewStat(Long userId);
 
     /** 随机抽题，不返回正确答案。 */
     List<QuestionVO> randomList(Long userId, String questionType, String questionYear, String questionSource, String questionJoinDate, String randomScope, String analysisScope, Integer size);
