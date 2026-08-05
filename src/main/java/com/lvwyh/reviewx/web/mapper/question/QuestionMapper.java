@@ -28,8 +28,13 @@ public interface QuestionMapper {
     /** 按题目 ID 查询启用状态的题目。 */
     Question selectById(@Param("userId") Long userId, @Param("questionId") String questionId);
 
-    /** 查询当前用户全部启用题目，用于 JSON 导出。 */
-    List<Question> selectAllForExport(@Param("userId") Long userId);
+    /** 统计当前用户可导出的启用题目数量。 */
+    long countForExport(@Param("userId") Long userId);
+
+    /** 分页查询导出数据，限制单次加载的 Base64 大字段数量。 */
+    List<Question> selectForExportPage(@Param("userId") Long userId,
+                                       @Param("offset") int offset,
+                                       @Param("pageSize") int pageSize);
 
     /** 按关键字、年份、来源分页搜索题目。 */
     List<Question> search(@Param("userId") Long userId,

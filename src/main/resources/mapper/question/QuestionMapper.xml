@@ -116,8 +116,14 @@
         LIMIT 1
     </select>
 
-    <!-- 导出当前用户的完整题目和解析数据。 -->
-    <select id="selectAllForExport" resultType="com.lvwyh.reviewx.web.entity.question.Question">
+    <select id="countForExport" resultType="long">
+        SELECT COUNT(1)
+        FROM QUESTION
+        WHERE USER_ID = #{userId}
+          AND QUESTION_STATUS = 1
+    </select>
+
+    <select id="selectForExportPage" resultType="com.lvwyh.reviewx.web.entity.question.Question">
         SELECT <include refid="Q_Base_Column_List"/>
         FROM QUESTION q
         LEFT JOIN QUESTION_ANALYSIS qa
@@ -126,6 +132,7 @@
         WHERE q.USER_ID = #{userId}
           AND q.QUESTION_STATUS = 1
         ORDER BY q.CREATED_TIME ASC, q.QUESTION_ID ASC
+        LIMIT #{offset}, #{pageSize}
     </select>
 
     <!-- 分页搜索题目，当前用于查看题库。 -->

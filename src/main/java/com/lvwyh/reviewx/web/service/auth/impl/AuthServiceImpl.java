@@ -8,6 +8,7 @@ import com.lvwyh.reviewx.web.security.LoginUser;
 import com.lvwyh.reviewx.web.service.auth.AccessService;
 import com.lvwyh.reviewx.web.service.auth.AuthService;
 import com.lvwyh.reviewx.web.service.auth.TokenService;
+import com.lvwyh.reviewx.web.service.auth.LoginAttemptService;
 import com.lvwyh.reviewx.web.vo.auth.LoginVO;
 import com.lvwyh.reviewx.web.vo.auth.MeVO;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -32,17 +33,20 @@ public class AuthServiceImpl implements AuthService {
     private final TokenService tokenService;
     private final PasswordEncoder passwordEncoder;
     private final JwtProperties jwtProperties;
+    private final LoginAttemptService loginAttemptService;
 
     public AuthServiceImpl(SysUserMapper sysUserMapper,
                            AccessService accessService,
                            TokenService tokenService,
                            PasswordEncoder passwordEncoder,
-                           JwtProperties jwtProperties) {
+                           JwtProperties jwtProperties,
+                           LoginAttemptService loginAttemptService) {
         this.sysUserMapper = sysUserMapper;
         this.accessService = accessService;
         this.tokenService = tokenService;
         this.passwordEncoder = passwordEncoder;
         this.jwtProperties = jwtProperties;
+        this.loginAttemptService = loginAttemptService;
     }
 
     /**
@@ -51,14 +55,18 @@ public class AuthServiceImpl implements AuthService {
      * 校验用户名、用户状态和密码，全部通过后签发 JWT。
      */
     @Override
-    public LoginVO login(String username, String password) {
+    public LoginVO login(String username, String password, String clientAddress) {
+        loginAttemptService.checkAllowed(username, clientAddress);
         SysUser user = sysUserMapper.selectByUsername(username);
         if (user == null || !Integer.valueOf(1).equals(user.getUserStatus())) {
+            loginAttemptService.recordFailure(username, clientAddress);
             throw new BusinessException(401, "用户名或密码错误");
         }
         if (!passwordEncoder.matches(password, user.getPasswordHash())) {
+            loginAttemptService.recordFailure(username, clientAddress);
             throw new BusinessException(401, "用户名或密码错误");
         }
+        loginAttemptService.recordSuccess(username);
 
         Integer tokenVersion = accessService.getTokenVersionOrInit(user.getUserId());
         LoginVO vo = new LoginVO();

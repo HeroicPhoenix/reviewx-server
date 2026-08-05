@@ -13,4 +13,8 @@
             ANALYSIS_IMAGE_BASE64 = VALUES(ANALYSIS_IMAGE_BASE64),
             UPDATED_TIME = VALUES(UPDATED_TIME)
     </insert>
+
+    <delete id="deleteByUserId">
+        DELETE FROM QUESTION_ANALYSIS WHERE USER_ID = #{userId}
+    </delete>
 </mapper>

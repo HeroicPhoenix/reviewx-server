@@ -36,7 +36,7 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
     /**
      * 不需要登录即可访问的接口。
      *
-     * 登录接口、Swagger、Druid 监控和健康检查必须放行，否则无法获取 Token 或查看文档。
+     * 登录接口、Swagger 和健康检查放行；Druid 管理端默认关闭且不绕过业务认证。
      */
     private static final List<String> WHITE_LIST = Arrays.asList(
             "/api/auth/login",
@@ -44,7 +44,6 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
             "/v3/api-docs/**",
             "/swagger-ui.html",
             "/swagger-ui/**",
-            "/druid/**",
             "/actuator/health"
     );
 

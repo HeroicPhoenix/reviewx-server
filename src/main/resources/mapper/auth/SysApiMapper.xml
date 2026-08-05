@@ -21,7 +21,9 @@
         FROM SYS_API a
         INNER JOIN SYS_ROLE_API_PERMISSION rap ON rap.API_ID = a.API_ID
         INNER JOIN SYS_USER_ROLE ur ON ur.ROLE_ID = rap.ROLE_ID
+        INNER JOIN SYS_ROLE r ON r.ROLE_ID = ur.ROLE_ID
         WHERE ur.USER_ID = #{userId}
           AND a.STATUS = 1
+          AND r.ROLE_STATUS = 1
     </select>
 </mapper>

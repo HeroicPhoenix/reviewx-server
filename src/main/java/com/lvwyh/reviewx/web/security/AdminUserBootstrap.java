@@ -1,5 +1,6 @@
 package com.lvwyh.reviewx.web.security;
 
+import com.lvwyh.reviewx.web.config.security.BootstrapAdminProperties;
 import com.lvwyh.reviewx.web.entity.auth.SysApi;
 import com.lvwyh.reviewx.web.entity.auth.SysRole;
 import com.lvwyh.reviewx.web.entity.auth.SysUser;
@@ -16,23 +17,19 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 
 /**
  * 默认管理员初始化器。
  *
- * 应用启动时自动确保 admin 用户、ADMIN 角色、接口权限码和绑定关系存在，
- * 这样新环境建表后可以直接使用 admin / 123456 登录。
+ * 应用启动时确保内置角色和权限存在；管理员账号仅在显式开启时创建。
  */
 @Component
 public class AdminUserBootstrap implements ApplicationRunner {
 
     private static final Logger log = LogManager.getLogger(AdminUserBootstrap.class);
-    /** 默认管理员用户名。 */
-    private static final String ADMIN_USERNAME = "admin";
-    /** 默认管理员初始密码，首次部署后建议立即修改。 */
-    private static final String ADMIN_PASSWORD = "123456";
     /** 默认管理员角色编码。 */
     private static final String ADMIN_ROLE_CODE = "ADMIN";
     /** 默认普通用户角色编码。 */
@@ -88,6 +85,7 @@ public class AdminUserBootstrap implements ApplicationRunner {
     private final SysRoleApiPermissionMapper sysRoleApiPermissionMapper;
     private final SysUserTokenVersionMapper sysUserTokenVersionMapper;
     private final PasswordEncoder passwordEncoder;
+    private final BootstrapAdminProperties bootstrapAdminProperties;
 
     public AdminUserBootstrap(SysUserMapper sysUserMapper,
                               SysRoleMapper sysRoleMapper,
@@ -95,7 +93,8 @@ public class AdminUserBootstrap implements ApplicationRunner {
                               SysUserRoleMapper sysUserRoleMapper,
                               SysRoleApiPermissionMapper sysRoleApiPermissionMapper,
                               SysUserTokenVersionMapper sysUserTokenVersionMapper,
-                              PasswordEncoder passwordEncoder) {
+                              PasswordEncoder passwordEncoder,
+                              BootstrapAdminProperties bootstrapAdminProperties) {
         this.sysUserMapper = sysUserMapper;
         this.sysRoleMapper = sysRoleMapper;
         this.sysApiMapper = sysApiMapper;
@@ -103,6 +102,7 @@ public class AdminUserBootstrap implements ApplicationRunner {
         this.sysRoleApiPermissionMapper = sysRoleApiPermissionMapper;
         this.sysUserTokenVersionMapper = sysUserTokenVersionMapper;
         this.passwordEncoder = passwordEncoder;
+        this.bootstrapAdminProperties = bootstrapAdminProperties;
     }
 
     /**
@@ -114,10 +114,25 @@ public class AdminUserBootstrap implements ApplicationRunner {
         SysRole adminRole = ensureRole(ADMIN_ROLE_CODE, "系统管理员", 0);
         SysRole normalRole = ensureRole(NORMAL_ROLE_CODE, "普通用户", 0);
         ensureApiPermissions(adminRole.getRoleId(), normalRole.getRoleId());
-        SysUser user = ensureAdminUser();
-        ensureUserRole(user.getUserId(), adminRole.getRoleId());
-        if (sysUserTokenVersionMapper.selectByUserId(user.getUserId()) == null) {
-            sysUserTokenVersionMapper.insert(user.getUserId(), 1);
+        if (bootstrapAdminProperties.isEnabled()) {
+            validateBootstrapAdminConfig();
+            SysUser user = ensureAdminUser();
+            ensureUserRole(user.getUserId(), adminRole.getRoleId());
+            if (sysUserTokenVersionMapper.selectByUserId(user.getUserId()) == null) {
+                sysUserTokenVersionMapper.insert(user.getUserId(), 1);
+            }
+        } else {
+            log.info("Bootstrap admin creation is disabled");
+        }
+    }
+
+    private void validateBootstrapAdminConfig() {
+        if (!StringUtils.hasText(bootstrapAdminProperties.getUsername())) {
+            throw new IllegalStateException("reviewx.bootstrap-admin.username cannot be empty when enabled");
+        }
+        if (!StringUtils.hasText(bootstrapAdminProperties.getPassword())
+                || bootstrapAdminProperties.getPassword().length() < 12) {
+            throw new IllegalStateException("reviewx.bootstrap-admin.password must contain at least 12 characters when enabled");
         }
     }
 
@@ -125,22 +140,24 @@ public class AdminUserBootstrap implements ApplicationRunner {
      * 确保默认管理员用户存在。
      */
     private SysUser ensureAdminUser() {
-        SysUser existed = sysUserMapper.selectByUsername(ADMIN_USERNAME);
+        String username = bootstrapAdminProperties.getUsername().trim();
+        SysUser existed = sysUserMapper.selectByUsername(username);
         if (existed != null) {
             return existed;
         }
         LocalDateTime now = LocalDateTime.now();
         SysUser user = new SysUser();
-        user.setUsername(ADMIN_USERNAME);
-        user.setPasswordHash(passwordEncoder.encode(ADMIN_PASSWORD));
-        user.setNickName("超级管理员");
+        user.setUsername(username);
+        user.setPasswordHash(passwordEncoder.encode(bootstrapAdminProperties.getPassword()));
+        user.setNickName(StringUtils.hasText(bootstrapAdminProperties.getNickName())
+                ? bootstrapAdminProperties.getNickName().trim() : username);
         user.setUserStatus(1);
         user.setIsDelete(0);
         user.setIsAllowRoleChange(0);
         user.setCreateTime(now);
         user.setUpdateTime(now);
         sysUserMapper.insert(user);
-        log.info("Bootstrap admin user created: username={}", ADMIN_USERNAME);
+        log.info("Bootstrap admin user created: username={}", username);
         return user;
     }
 

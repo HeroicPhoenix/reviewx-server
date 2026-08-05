@@ -1,8 +1,8 @@
 package com.lvwyh.reviewx.web.service.question.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.lvwyh.reviewx.web.common.exception.BusinessException;
 import com.lvwyh.reviewx.web.entity.question.Question;
@@ -18,10 +18,15 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.Locale;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /** 当前用户题库的 JSON 导入导出实现。 */
 @Service
@@ -30,6 +35,7 @@ public class QuestionJsonTransferServiceImpl implements QuestionJsonTransferServ
     private static final String SCOPE_QUESTION = "question";
     private static final String SCOPE_ANALYSIS = "analysis";
     private static final String SCOPE_ALL = "question_analysis";
+    private static final int EXPORT_PAGE_SIZE = 100;
 
     private final QuestionMapper questionMapper;
     private final QuestionAnalysisMapper questionAnalysisMapper;
@@ -44,35 +50,46 @@ public class QuestionJsonTransferServiceImpl implements QuestionJsonTransferServ
     }
 
     @Override
-    public JsonNode exportJson(Long userId, String scope) {
-        return exportJson(userId, scope, null);
-    }
-
-    @Override
-    public JsonNode exportJson(Long userId, String scope, ProgressListener listener) {
+    @Transactional(readOnly = true)
+    public void exportJsonTo(Long userId, String scope, OutputStream outputStream, ProgressListener listener) {
         String validScope = validScope(scope);
-        ObjectNode root = objectMapper.createObjectNode();
-        root.put("schemaVersion", 1);
-        root.put("scope", validScope);
-        root.put("exportedAt", LocalDateTime.now().toString());
-        ArrayNode items = root.putArray("items");
-        java.util.List<Question> questions = questionMapper.selectAllForExport(userId);
-        int total = questions.size();
+        long totalValue = questionMapper.countForExport(userId);
+        int total = totalValue > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) totalValue;
         int processed = 0;
-        notifyProgress(listener, processed, total);
-        for (Question question : questions) {
-            ObjectNode item = items.addObject();
-            item.put("questionId", question.getQuestionId());
-            if (!SCOPE_ANALYSIS.equals(validScope)) {
-                writeQuestion(item, question);
+        int offset = 0;
+        notifyProgress(listener, 0, total);
+        try (JsonGenerator generator = objectMapper.getFactory().createGenerator(outputStream)) {
+            generator.writeStartObject();
+            generator.writeNumberField("schemaVersion", 1);
+            generator.writeStringField("scope", validScope);
+            generator.writeStringField("exportedAt", LocalDateTime.now().toString());
+            generator.writeArrayFieldStart("items");
+            while (true) {
+                java.util.List<Question> questions = questionMapper.selectForExportPage(userId, offset, EXPORT_PAGE_SIZE);
+                if (questions == null || questions.isEmpty()) break;
+                for (Question question : questions) {
+                    ObjectNode item = objectMapper.createObjectNode();
+                    item.put("questionId", question.getQuestionId());
+                    if (!SCOPE_ANALYSIS.equals(validScope)) {
+                        writeQuestion(item, question);
+                    }
+                    if (!SCOPE_QUESTION.equals(validScope)) {
+                        putNullable(item, "analysisContent", question.getAnalysisContent());
+                        putNullable(item, "analysisImageBase64", question.getAnalysisImageBase64());
+                    }
+                    generator.writeTree(item);
+                    processed++;
+                    notifyProgress(listener, processed, total);
+                }
+                offset += questions.size();
+                if (questions.size() < EXPORT_PAGE_SIZE) break;
             }
-            if (!SCOPE_QUESTION.equals(validScope)) {
-                putNullable(item, "analysisContent", question.getAnalysisContent());
-                putNullable(item, "analysisImageBase64", question.getAnalysisImageBase64());
-            }
-            notifyProgress(listener, ++processed, total);
+            generator.writeEndArray();
+            generator.writeEndObject();
+            generator.flush();
+        } catch (IOException e) {
+            throw new BusinessException(500, "题库导出失败：" + e.getMessage(), e);
         }
-        return root;
     }
 
     @Override
@@ -168,11 +185,12 @@ public class QuestionJsonTransferServiceImpl implements QuestionJsonTransferServ
         if (answerContent == null || !answerContent.isArray() || answerContent.size() == 0) {
             throw new IllegalArgumentException("answerContent 必须是非空数组");
         }
+        List<String> answers = answerLabels(answerContent);
         LocalDateTime now = LocalDateTime.now();
         Question question = new Question();
         question.setQuestionId(questionId);
         question.setUserId(userId);
-        question.setQuestionType(answerContent.size() > 1 ? 2 : 1);
+        question.setQuestionType(answers.size() > 1 ? 2 : 1);
         question.setQuestionCategory(trimToNull(text(item, "questionCategory")));
         question.setQuestionContent(questionContent.trim());
         question.setQuestionImageBase64(trimToNull(text(item, "questionImageBase64")));
@@ -184,7 +202,8 @@ public class QuestionJsonTransferServiceImpl implements QuestionJsonTransferServ
         question.setOption6(trimToEmpty(text(item, "option6")));
         question.setOption7(trimToEmpty(text(item, "option7")));
         question.setOption8(trimToEmpty(text(item, "option8")));
-        question.setAnswerContent(objectMapper.writeValueAsString(answerContent));
+        validateAnswersMatchOptions(question, answers);
+        question.setAnswerContent(objectMapper.writeValueAsString(answers));
         question.setAnswerSource(trimToNull(text(item, "answerSource")));
         question.setQuestionYear(trimToNull(text(item, "questionYear")));
         question.setQuestionSource(trimToNull(text(item, "questionSource")));
@@ -259,5 +278,28 @@ public class QuestionJsonTransferServiceImpl implements QuestionJsonTransferServ
 
     private String trimToEmpty(String value) {
         return value == null ? "" : value.trim();
+    }
+
+    private List<String> answerLabels(JsonNode answerContent) {
+        List<String> answers = new ArrayList<String>();
+        for (JsonNode answer : answerContent) {
+            answers.add(answer.asText("").trim().toUpperCase(Locale.ROOT));
+        }
+        return answers;
+    }
+
+    private void validateAnswersMatchOptions(Question question, List<String> answers) {
+        String[] options = new String[]{question.getOption1(), question.getOption2(), question.getOption3(), question.getOption4(),
+                question.getOption5(), question.getOption6(), question.getOption7(), question.getOption8()};
+        Set<String> uniqueAnswers = new HashSet<String>();
+        for (String answer : answers) {
+            if (answer.length() != 1 || answer.charAt(0) < 'A' || answer.charAt(0) > 'H') {
+                throw new IllegalArgumentException("答案只能是A到H");
+            }
+            if (!uniqueAnswers.add(answer)) throw new IllegalArgumentException("答案不能重复");
+            if (!StringUtils.hasText(options[answer.charAt(0) - 'A'])) {
+                throw new IllegalArgumentException("答案 " + answer + " 对应的选项为空");
+            }
+        }
     }
 }

@@ -42,10 +42,10 @@ spring:
       filters: stat,wall,slf4j
 
       stat-view-servlet:
-        enabled: true
+        enabled: ${DRUID_STAT_VIEW_ENABLED:false}
         url-pattern: /druid/*
-        login-username: admin
-        login-password: admin
+        login-username: ${DRUID_LOGIN_USERNAME:}
+        login-password: ${DRUID_LOGIN_PASSWORD:}
         reset-enable: false
 
       web-stat-filter:
@@ -60,5 +60,10 @@ mybatis:
 
 reviewx:
   jwt:
-    secret: ${REVIEWX_JWT_SECRET:ReviewXJwtSecretKeyForLocalDevelopmentOnly123456}
+    secret: ${REVIEWX_JWT_SECRET}
     expire-seconds: ${REVIEWX_JWT_EXPIRE_SECONDS:86400}
+  bootstrap-admin:
+    enabled: ${REVIEWX_BOOTSTRAP_ADMIN_ENABLED:false}
+    username: ${REVIEWX_BOOTSTRAP_ADMIN_USERNAME:}
+    password: ${REVIEWX_BOOTSTRAP_ADMIN_PASSWORD:}
+    nick-name: ${REVIEWX_BOOTSTRAP_ADMIN_NICKNAME:超级管理员}

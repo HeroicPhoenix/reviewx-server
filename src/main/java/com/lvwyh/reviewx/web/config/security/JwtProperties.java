@@ -12,9 +12,8 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "reviewx.jwt")
 public class JwtProperties {
 
-    private static final String DEFAULT_SECRET = "ReviewXJwtSecretKeyForLocalDevelopmentOnly123456";
     /** JWT HMAC 签名密钥，生产环境必须使用强随机密钥。 */
-    private String secret = DEFAULT_SECRET;
+    private String secret;
 
     /** Token 有效期，单位秒。 */
     private Long expireSeconds = 86400L;
@@ -24,9 +23,7 @@ public class JwtProperties {
     }
 
     public void setSecret(String secret) {
-        if (secret != null && secret.trim().length() > 0) {
-            this.secret = secret;
-        }
+        this.secret = secret;
     }
 
     public Long getExpireSeconds() {

@@ -32,6 +32,7 @@ public class QuestionUpdateAO implements Serializable {
     private String questionContent;
 
     @Schema(description = "题目图片Base64，仅支持一张图片")
+    @Size(max = 12000000, message = "题目图片数据不能超过12MB")
     private String questionImageBase64;
 
     @Schema(description = "选项A")
@@ -72,6 +73,7 @@ public class QuestionUpdateAO implements Serializable {
     private String analysisContent;
 
     @Schema(description = "题目解析图片Base64，仅支持一张图片")
+    @Size(max = 12000000, message = "解析图片数据不能超过12MB")
     private String analysisImageBase64;
 
     @Schema(description = "题目年份，4位数字")

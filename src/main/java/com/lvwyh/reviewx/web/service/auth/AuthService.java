@@ -11,7 +11,7 @@ import com.lvwyh.reviewx.web.vo.auth.MeVO;
 public interface AuthService {
 
     /** 校验用户名密码并签发 JWT。 */
-    LoginVO login(String username, String password);
+    LoginVO login(String username, String password, String clientAddress);
 
     /** 查询当前登录用户信息。 */
     MeVO me(Long userId);

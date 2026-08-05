@@ -1,7 +1,5 @@
 package com.lvwyh.reviewx.web.service.question.impl;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lvwyh.reviewx.web.common.exception.BusinessException;
 import com.lvwyh.reviewx.web.service.question.QuestionJsonTransferService;
 import com.lvwyh.reviewx.web.service.question.QuestionTransferTaskService;
@@ -15,6 +13,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -32,15 +31,12 @@ public class QuestionTransferTaskServiceImpl implements QuestionTransferTaskServ
     private static final long TASK_EXPIRE_MILLIS = 2 * 60 * 60 * 1000L;
 
     private final QuestionJsonTransferService transferService;
-    private final ObjectMapper objectMapper;
     private final Executor executor;
     private final Map<String, TaskState> tasks = new ConcurrentHashMap<String, TaskState>();
 
     public QuestionTransferTaskServiceImpl(QuestionJsonTransferService transferService,
-                                           ObjectMapper objectMapper,
                                            @Qualifier("questionTransferExecutor") Executor executor) {
         this.transferService = transferService;
-        this.objectMapper = objectMapper;
         this.executor = executor;
     }
 
@@ -98,10 +94,11 @@ public class QuestionTransferTaskServiceImpl implements QuestionTransferTaskServ
         task.status = "processing";
         task.message = "正在生成 JSON 文件";
         try {
-            JsonNode data = transferService.exportJson(task.userId, scope,
-                    (processed, total) -> updateProgress(task, processed, total));
             task.tempFile = Files.createTempFile("reviewx-json-export-", ".json");
-            objectMapper.writerWithDefaultPrettyPrinter().writeValue(task.tempFile.toFile(), data);
+            try (OutputStream output = Files.newOutputStream(task.tempFile)) {
+                transferService.exportJsonTo(task.userId, scope, output,
+                        (processed, total) -> updateProgress(task, processed, total));
+            }
             task.fileName = "reviewx-" + scope + "-" + LocalDate.now() + ".json";
             task.progress = 100;
             task.status = "completed";

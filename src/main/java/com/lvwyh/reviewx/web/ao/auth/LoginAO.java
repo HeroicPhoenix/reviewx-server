@@ -3,6 +3,7 @@ package com.lvwyh.reviewx.web.ao.auth;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Size;
 import java.io.Serializable;
 
 /**
@@ -15,10 +16,12 @@ public class LoginAO implements Serializable {
 
     /** 登录用户名。 */
     @NotBlank(message = "用户名不能为空")
+    @Size(max = 64, message = "用户名最多64个字符")
     private String username;
 
     /** 登录密码明文，只用于本次校验，不会落库。 */
     @NotBlank(message = "密码不能为空")
+    @Size(max = 128, message = "密码最多128个字符")
     private String password;
 
     public String getUsername() { return username; }

@@ -1,6 +1,5 @@
 package com.lvwyh.reviewx.web.controller.question;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.lvwyh.reviewx.web.ao.question.QuestionUpdateAO;
 import com.lvwyh.reviewx.web.ao.question.QuestionAnalysisUpdateAO;
 import com.lvwyh.reviewx.web.common.response.ApiResponse;
@@ -203,10 +202,9 @@ public class QuestionController {
     @Operation(summary = "导出题库 JSON")
     @RequirePermission("question:view")
     @GetMapping("/exportJson")
-    public ApiResponse<JsonNode> exportJson(@RequestParam String scope) {
-        Long userId = LoginUserContext.require().getUserId();
-        log.info("Question JSON export request: userId={}, scope={}", userId, scope);
-        return ApiResponse.success("导出成功", questionJsonTransferService.exportJson(userId, scope));
+    public ApiResponse<Void> exportJson(@RequestParam String scope) {
+        throw new com.lvwyh.reviewx.web.common.exception.BusinessException(410,
+                "同步导出接口已停用，请使用 exportJsonTask 创建流式导出任务");
     }
 
     /**

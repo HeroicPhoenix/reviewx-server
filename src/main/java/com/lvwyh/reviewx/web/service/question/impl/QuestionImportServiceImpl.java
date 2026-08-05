@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lvwyh.reviewx.web.common.exception.BusinessException;
 import com.lvwyh.reviewx.web.entity.question.Question;
 import com.lvwyh.reviewx.web.mapper.question.QuestionMapper;
+import com.lvwyh.reviewx.web.mapper.question.QuestionAnalysisMapper;
 import com.lvwyh.reviewx.web.service.question.QuestionImportService;
 import com.lvwyh.reviewx.web.vo.question.QuestionImportFailureVO;
 import com.lvwyh.reviewx.web.vo.question.QuestionImportResultVO;
@@ -24,6 +25,10 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Enumeration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.Locale;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -38,12 +43,19 @@ public class QuestionImportServiceImpl implements QuestionImportService {
 
     private static final String LOGS_DIR_NAME = "logs";
     private static final DateTimeFormatter JOIN_DATE_FORMATTER = DateTimeFormatter.BASIC_ISO_DATE;
+    private static final long MAX_ENTRY_UNCOMPRESSED_BYTES = 50L * 1024L * 1024L;
+    private static final long MAX_TOTAL_UNCOMPRESSED_BYTES = 200L * 1024L * 1024L;
+    private static final long MAX_COMPRESSION_RATIO = 100L;
 
     private final QuestionMapper questionMapper;
+    private final QuestionAnalysisMapper questionAnalysisMapper;
     private final ObjectMapper objectMapper;
 
-    public QuestionImportServiceImpl(QuestionMapper questionMapper, ObjectMapper objectMapper) {
+    public QuestionImportServiceImpl(QuestionMapper questionMapper,
+                                     QuestionAnalysisMapper questionAnalysisMapper,
+                                     ObjectMapper objectMapper) {
         this.questionMapper = questionMapper;
+        this.questionAnalysisMapper = questionAnalysisMapper;
         this.objectMapper = objectMapper;
     }
 
@@ -67,9 +79,19 @@ public class QuestionImportServiceImpl implements QuestionImportService {
             tempFile = File.createTempFile("reviewx-question-import-", ".zip");
             file.transferTo(tempFile);
             if (clearBeforeImport) {
+                QuestionImportResultVO validation = importZipFile(userId, tempFile, true, false);
+                if (validation.getTotalFileCount() == 0 || validation.getTotalQuestionCount() == 0) {
+                    throw new BusinessException(400, "ZIP 中没有可导入的题目 JSON，原题库未清空");
+                }
+                if (validation.getFailedQuestionCount() > 0) {
+                    throw new BusinessException(400, "ZIP 预检失败 " + validation.getFailedQuestionCount()
+                            + " 项，原题库未清空");
+                }
+                questionAnalysisMapper.deleteByUserId(userId);
                 questionMapper.deleteByUserId(userId);
+                return importZipFile(userId, tempFile, false, true);
             }
-            return importZipFile(userId, tempFile);
+            return importZipFile(userId, tempFile, false, false);
         } catch (IOException e) {
             throw new BusinessException(500, "保存上传 zip 文件失败：" + e.getMessage(), e);
         } finally {
@@ -79,16 +101,20 @@ public class QuestionImportServiceImpl implements QuestionImportService {
         }
     }
 
-    private QuestionImportResultVO importZipFile(Long userId, File zipFile) {
+    private QuestionImportResultVO importZipFile(Long userId, File zipFile, boolean dryRun, boolean failFast) {
         try {
-            return importZipWithCharset(userId, zipFile, StandardCharsets.UTF_8);
+            return importZipWithCharset(userId, zipFile, StandardCharsets.UTF_8, dryRun, failFast);
+        } catch (BusinessException e) {
+            throw e;
         } catch (IllegalArgumentException e) {
-            return importZipWithCharset(userId, zipFile, Charset.forName("GBK"));
+            return importZipWithCharset(userId, zipFile, Charset.forName("GBK"), dryRun, failFast);
         }
     }
 
-    private QuestionImportResultVO importZipWithCharset(Long userId, File zipFile, Charset charset) {
+    private QuestionImportResultVO importZipWithCharset(Long userId, File zipFile, Charset charset,
+                                                        boolean dryRun, boolean failFast) {
         QuestionImportResultVO result = new QuestionImportResultVO();
+        ZipReadBudget budget = new ZipReadBudget();
         try (ZipFile zip = new ZipFile(zipFile, charset)) {
             Enumeration<? extends ZipEntry> entries = zip.entries();
             while (entries.hasMoreElements()) {
@@ -98,7 +124,8 @@ public class QuestionImportServiceImpl implements QuestionImportService {
                 }
                 result.increaseTotalFileCount();
                 try (InputStream inputStream = zip.getInputStream(entry)) {
-                    importJsonFile(userId, entry.getName(), readEntry(inputStream), result);
+                    importJsonFile(userId, entry.getName(), readEntry(inputStream, entry, budget), result,
+                            dryRun, failFast);
                 }
             }
         } catch (IOException e) {
@@ -110,7 +137,8 @@ public class QuestionImportServiceImpl implements QuestionImportService {
     /**
      * 导入单个 JSON 文件中的全部题目。
      */
-    private void importJsonFile(Long userId, String fileName, byte[] content, QuestionImportResultVO result) {
+    private void importJsonFile(Long userId, String fileName, byte[] content, QuestionImportResultVO result,
+                                boolean dryRun, boolean failFast) {
         String questionCategory = resolveQuestionType(fileName);
         LocalDate questionJoinDate = resolveQuestionJoinDate(fileName);
         try {
@@ -123,9 +151,14 @@ public class QuestionImportServiceImpl implements QuestionImportService {
             for (JsonNode item : root) {
                 index++;
                 result.increaseTotalQuestionCount();
-                importQuestion(userId, fileName, questionCategory, questionJoinDate, index, item, result);
+                importQuestion(userId, fileName, questionCategory, questionJoinDate, index, item, result,
+                        dryRun, failFast);
             }
         } catch (Exception e) {
+            if (failFast) {
+                throw e instanceof RuntimeException ? (RuntimeException) e
+                        : new BusinessException(500, "题库导入失败", e);
+            }
             result.addFailure(new QuestionImportFailureVO(fileName, questionCategory, null, null, "文件解析失败：" + e.getMessage()));
         }
     }
@@ -133,7 +166,9 @@ public class QuestionImportServiceImpl implements QuestionImportService {
     /**
      * 导入单道题目。
      */
-    private void importQuestion(Long userId, String fileName, String questionCategory, LocalDate questionJoinDate, int index, JsonNode item, QuestionImportResultVO result) {
+    private void importQuestion(Long userId, String fileName, String questionCategory, LocalDate questionJoinDate,
+                                int index, JsonNode item, QuestionImportResultVO result,
+                                boolean dryRun, boolean failFast) {
         String questionId = text(item, "id");
         if (!StringUtils.hasText(questionId)) {
             result.addMissingIdQuestion(new QuestionImportFailureVO(fileName, questionCategory, index, null, "题目缺少id"));
@@ -141,9 +176,15 @@ public class QuestionImportServiceImpl implements QuestionImportService {
         }
         try {
             Question question = toQuestion(userId, questionId, questionCategory, questionJoinDate, item);
-            questionMapper.upsert(question);
+            if (!dryRun) {
+                questionMapper.upsert(question);
+            }
             result.increaseSuccessQuestionCount();
         } catch (Exception e) {
+            if (failFast) {
+                throw e instanceof RuntimeException ? (RuntimeException) e
+                        : new BusinessException(500, "题目导入失败", e);
+            }
             result.addFailure(new QuestionImportFailureVO(fileName, questionCategory, index, questionId, "题目导入失败：" + e.getMessage()));
         }
     }
@@ -154,14 +195,18 @@ public class QuestionImportServiceImpl implements QuestionImportService {
     private Question toQuestion(Long userId, String questionId, String questionCategory, LocalDate questionJoinDate, JsonNode item) throws IOException {
         LocalDateTime now = LocalDateTime.now();
         JsonNode options = item.get("options");
-        JsonNode answer = item.get("answer");
+        List<String> answers = answerLabels(item.get("answer"));
 
         Question question = new Question();
+        if (questionId.length() > 255) throw new IllegalArgumentException("题目ID最多255个字符");
+        if (questionCategory != null && questionCategory.length() > 64) throw new IllegalArgumentException("题目分类最多64个字符");
         question.setQuestionId(questionId);
         question.setUserId(userId);
-        question.setQuestionType(resolveAnswerType(answer));
+        question.setQuestionType(answers.size() > 1 ? 2 : 1);
         question.setQuestionCategory(questionCategory);
-        question.setQuestionContent(text(item, "question"));
+        String questionContent = text(item, "question");
+        if (!StringUtils.hasText(questionContent)) throw new IllegalArgumentException("题干不能为空");
+        question.setQuestionContent(questionContent.trim());
         question.setQuestionImageBase64(firstText(item, "question_image_base64", "image_base64", "image"));
         question.setOption1(option(options, "A"));
         question.setOption2(option(options, "B"));
@@ -171,7 +216,8 @@ public class QuestionImportServiceImpl implements QuestionImportService {
         question.setOption6(option(options, "F"));
         question.setOption7(option(options, "G"));
         question.setOption8(option(options, "H"));
-        question.setAnswerContent(answer == null ? "[]" : objectMapper.writeValueAsString(answer));
+        validateAnswersMatchOptions(question, answers);
+        question.setAnswerContent(objectMapper.writeValueAsString(answers));
         question.setAnswerSource(text(item, "answer_source"));
         question.setQuestionYear(text(item, "year"));
         question.setQuestionSource(text(item, "question_source"));
@@ -186,11 +232,33 @@ public class QuestionImportServiceImpl implements QuestionImportService {
     /**
      * 题目类型：1单选、2多选。按答案数量直接识别。
      */
-    private Integer resolveAnswerType(JsonNode answer) {
-        if (answer != null && answer.isArray() && answer.size() > 1) {
-            return 2;
+    private List<String> answerLabels(JsonNode answer) {
+        List<String> labels = new ArrayList<String>();
+        if (answer == null || answer.isNull()) {
+            throw new IllegalArgumentException("答案不能为空");
         }
-        return 1;
+        if (answer.isArray()) {
+            for (JsonNode item : answer) labels.add(item.asText("").trim().toUpperCase(Locale.ROOT));
+        } else {
+            labels.add(answer.asText("").trim().toUpperCase(Locale.ROOT));
+        }
+        if (labels.isEmpty()) throw new IllegalArgumentException("答案不能为空");
+        return labels;
+    }
+
+    private void validateAnswersMatchOptions(Question question, List<String> answers) {
+        String[] options = new String[]{question.getOption1(), question.getOption2(), question.getOption3(), question.getOption4(),
+                question.getOption5(), question.getOption6(), question.getOption7(), question.getOption8()};
+        Set<String> uniqueAnswers = new HashSet<String>();
+        for (String answer : answers) {
+            if (answer.length() != 1 || answer.charAt(0) < 'A' || answer.charAt(0) > 'H') {
+                throw new IllegalArgumentException("答案只能是A到H");
+            }
+            if (!uniqueAnswers.add(answer)) throw new IllegalArgumentException("答案不能重复");
+            if (!StringUtils.hasText(options[answer.charAt(0) - 'A'])) {
+                throw new IllegalArgumentException("答案 " + answer + " 对应的选项为空");
+            }
+        }
     }
 
     /**
@@ -261,14 +329,31 @@ public class QuestionImportServiceImpl implements QuestionImportService {
     /**
      * 读取当前 zip entry 的全部字节。
      */
-    private byte[] readEntry(InputStream inputStream) throws IOException {
+    private byte[] readEntry(InputStream inputStream, ZipEntry entry, ZipReadBudget budget) throws IOException {
+        long declaredSize = entry.getSize();
+        long compressedSize = entry.getCompressedSize();
+        if (declaredSize > MAX_ENTRY_UNCOMPRESSED_BYTES) {
+            throw new BusinessException(400, "ZIP 内文件解压后超过 50MB：" + entry.getName());
+        }
+        if (declaredSize > 0 && compressedSize > 0 && declaredSize / compressedSize > MAX_COMPRESSION_RATIO) {
+            throw new BusinessException(400, "ZIP 内文件压缩比异常：" + entry.getName());
+        }
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         byte[] buffer = new byte[4096];
         int len;
         while ((len = inputStream.read(buffer)) != -1) {
+            budget.totalBytes += len;
+            if (outputStream.size() + len > MAX_ENTRY_UNCOMPRESSED_BYTES
+                    || budget.totalBytes > MAX_TOTAL_UNCOMPRESSED_BYTES) {
+                throw new BusinessException(400, "ZIP 解压内容超过安全限制");
+            }
             outputStream.write(buffer, 0, len);
         }
         return outputStream.toByteArray();
+    }
+
+    private static class ZipReadBudget {
+        private long totalBytes;
     }
 
     private String option(JsonNode options, String key) {

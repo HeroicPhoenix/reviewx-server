@@ -23,6 +23,7 @@ public class QuestionAnalysisUpdateAO implements Serializable {
     private String analysisContent;
 
     @Schema(description = "题目解析图片Base64，仅支持一张图片")
+    @Size(max = 12000000, message = "解析图片数据不能超过12MB")
     private String analysisImageBase64;
 
     public String getQuestionId() { return questionId; }

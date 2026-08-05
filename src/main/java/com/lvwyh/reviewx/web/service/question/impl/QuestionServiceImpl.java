@@ -14,10 +14,13 @@ import com.lvwyh.reviewx.web.vo.question.QuestionVO;
 import com.lvwyh.reviewx.web.vo.question.QuestionOverviewStatVO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * 题目查询服务实现。
@@ -100,6 +103,7 @@ public class QuestionServiceImpl extends QuestionConvertSupport implements Quest
         question.setOption6(trimToEmpty(ao.getOption6()));
         question.setOption7(trimToEmpty(ao.getOption7()));
         question.setOption8(trimToEmpty(ao.getOption8()));
+        validateAnswersMatchOptions(question, answers);
         question.setAnswerContent(toAnswerJson(answers));
         question.setAnswerSource(trimToNull(ao.getAnswerSource()));
         question.setQuestionYear(trimToNull(ao.getQuestionYear()));
@@ -294,5 +298,22 @@ public class QuestionServiceImpl extends QuestionConvertSupport implements Quest
         questionAnalysis.setCreatedTime(now);
         questionAnalysis.setUpdatedTime(now);
         return questionAnalysis;
+    }
+
+    private void validateAnswersMatchOptions(Question question, List<String> answers) {
+        String[] options = new String[]{question.getOption1(), question.getOption2(), question.getOption3(), question.getOption4(),
+                question.getOption5(), question.getOption6(), question.getOption7(), question.getOption8()};
+        Set<String> uniqueAnswers = new HashSet<String>();
+        for (String answer : answers) {
+            if (answer.length() != 1 || answer.charAt(0) < 'A' || answer.charAt(0) > 'H') {
+                throw new BusinessException(400, "答案只能是A到H");
+            }
+            if (!uniqueAnswers.add(answer)) {
+                throw new BusinessException(400, "答案不能重复");
+            }
+            if (!StringUtils.hasText(options[answer.charAt(0) - 'A'])) {
+                throw new BusinessException(400, "答案 " + answer + " 对应的选项为空");
+            }
+        }
     }
 }

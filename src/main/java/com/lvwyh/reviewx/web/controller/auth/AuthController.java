@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * 认证接口控制器。
@@ -47,9 +48,18 @@ public class AuthController {
      */
     @Operation(summary = "登录并获取JWT")
     @PostMapping("/login")
-    public ApiResponse<LoginVO> login(@Valid @RequestBody LoginAO ao) {
+    public ApiResponse<LoginVO> login(@Valid @RequestBody LoginAO ao, HttpServletRequest request) {
         log.info("Login request: username={}", ao.getUsername());
-        return ApiResponse.success("登录成功", authService.login(ao.getUsername(), ao.getPassword()));
+        return ApiResponse.success("登录成功", authService.login(ao.getUsername(), ao.getPassword(), clientAddress(request)));
+    }
+
+    private String clientAddress(HttpServletRequest request) {
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (forwarded != null && !forwarded.trim().isEmpty()) {
+            String[] addresses = forwarded.split(",");
+            return addresses[addresses.length - 1].trim();
+        }
+        return request.getRemoteAddr();
     }
 
     /**
