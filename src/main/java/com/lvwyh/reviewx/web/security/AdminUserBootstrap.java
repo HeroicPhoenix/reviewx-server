@@ -1,9 +1,10 @@
 package com.lvwyh.reviewx.web.security;
 
-import com.lvwyh.reviewx.web.config.security.BootstrapAdminProperties;
+import com.lvwyh.reviewx.web.config.security.AdminProperties;
 import com.lvwyh.reviewx.web.entity.auth.SysApi;
 import com.lvwyh.reviewx.web.entity.auth.SysRole;
 import com.lvwyh.reviewx.web.entity.auth.SysUser;
+import com.lvwyh.reviewx.web.entity.auth.SysUserTokenVersion;
 import com.lvwyh.reviewx.web.mapper.auth.SysApiMapper;
 import com.lvwyh.reviewx.web.mapper.auth.SysRoleApiPermissionMapper;
 import com.lvwyh.reviewx.web.mapper.auth.SysRoleMapper;
@@ -85,7 +86,7 @@ public class AdminUserBootstrap implements ApplicationRunner {
     private final SysRoleApiPermissionMapper sysRoleApiPermissionMapper;
     private final SysUserTokenVersionMapper sysUserTokenVersionMapper;
     private final PasswordEncoder passwordEncoder;
-    private final BootstrapAdminProperties bootstrapAdminProperties;
+    private final AdminProperties adminProperties;
 
     public AdminUserBootstrap(SysUserMapper sysUserMapper,
                               SysRoleMapper sysRoleMapper,
@@ -94,7 +95,7 @@ public class AdminUserBootstrap implements ApplicationRunner {
                               SysRoleApiPermissionMapper sysRoleApiPermissionMapper,
                               SysUserTokenVersionMapper sysUserTokenVersionMapper,
                               PasswordEncoder passwordEncoder,
-                              BootstrapAdminProperties bootstrapAdminProperties) {
+                              AdminProperties adminProperties) {
         this.sysUserMapper = sysUserMapper;
         this.sysRoleMapper = sysRoleMapper;
         this.sysApiMapper = sysApiMapper;
@@ -102,7 +103,7 @@ public class AdminUserBootstrap implements ApplicationRunner {
         this.sysRoleApiPermissionMapper = sysRoleApiPermissionMapper;
         this.sysUserTokenVersionMapper = sysUserTokenVersionMapper;
         this.passwordEncoder = passwordEncoder;
-        this.bootstrapAdminProperties = bootstrapAdminProperties;
+        this.adminProperties = adminProperties;
     }
 
     /**
@@ -114,43 +115,51 @@ public class AdminUserBootstrap implements ApplicationRunner {
         SysRole adminRole = ensureRole(ADMIN_ROLE_CODE, "系统管理员", 0);
         SysRole normalRole = ensureRole(NORMAL_ROLE_CODE, "普通用户", 0);
         ensureApiPermissions(adminRole.getRoleId(), normalRole.getRoleId());
-        if (bootstrapAdminProperties.isEnabled()) {
-            validateBootstrapAdminConfig();
-            SysUser user = ensureAdminUser();
-            ensureUserRole(user.getUserId(), adminRole.getRoleId());
-            if (sysUserTokenVersionMapper.selectByUserId(user.getUserId()) == null) {
-                sysUserTokenVersionMapper.insert(user.getUserId(), 1);
-            }
-        } else {
-            log.info("Bootstrap admin creation is disabled");
+        if (!adminProperties.isCreateIfMissing()) {
+            log.info("Admin creation when missing is disabled");
+            return;
+        }
+        if (sysUserMapper.countActiveByRoleCode(ADMIN_ROLE_CODE) > 0) {
+            log.info("An active admin user already exists; automatic creation skipped");
+            return;
+        }
+
+        validateAdminConfig();
+        SysUser user = createAdminUser();
+        ensureUserRole(user.getUserId(), adminRole.getRoleId());
+        SysUserTokenVersion tokenVersion = sysUserTokenVersionMapper.selectByUserId(user.getUserId());
+        if (tokenVersion == null) {
+            sysUserTokenVersionMapper.insert(user.getUserId(), 1);
         }
     }
 
-    private void validateBootstrapAdminConfig() {
-        if (!StringUtils.hasText(bootstrapAdminProperties.getUsername())) {
-            throw new IllegalStateException("reviewx.bootstrap-admin.username cannot be empty when enabled");
+    private void validateAdminConfig() {
+        if (!StringUtils.hasText(adminProperties.getUsername())) {
+            throw new IllegalStateException("reviewx.admin.username cannot be empty when create-if-missing is enabled");
         }
-        if (!StringUtils.hasText(bootstrapAdminProperties.getPassword())
-                || bootstrapAdminProperties.getPassword().length() < 12) {
-            throw new IllegalStateException("reviewx.bootstrap-admin.password must contain at least 12 characters when enabled");
+        if (!StringUtils.hasText(adminProperties.getPassword())
+                || adminProperties.getPassword().length() < 12) {
+            throw new IllegalStateException(
+                    "reviewx.admin.password must contain at least 12 characters when create-if-missing is enabled");
         }
     }
 
     /**
      * 确保默认管理员用户存在。
      */
-    private SysUser ensureAdminUser() {
-        String username = bootstrapAdminProperties.getUsername().trim();
+    private SysUser createAdminUser() {
+        String username = adminProperties.getUsername().trim();
         SysUser existed = sysUserMapper.selectByUsername(username);
         if (existed != null) {
-            return existed;
+            throw new IllegalStateException(
+                    "Cannot create missing admin because configured username already exists: " + username);
         }
         LocalDateTime now = LocalDateTime.now();
         SysUser user = new SysUser();
         user.setUsername(username);
-        user.setPasswordHash(passwordEncoder.encode(bootstrapAdminProperties.getPassword()));
-        user.setNickName(StringUtils.hasText(bootstrapAdminProperties.getNickName())
-                ? bootstrapAdminProperties.getNickName().trim() : username);
+        user.setPasswordHash(passwordEncoder.encode(adminProperties.getPassword()));
+        user.setNickName(StringUtils.hasText(adminProperties.getNickName())
+                ? adminProperties.getNickName().trim() : username);
         user.setUserStatus(1);
         user.setIsDelete(0);
         user.setIsAllowRoleChange(0);

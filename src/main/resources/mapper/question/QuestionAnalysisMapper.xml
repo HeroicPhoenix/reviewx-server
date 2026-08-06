@@ -1,7 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.lvwyh.reviewx.web.mapper.question.QuestionAnalysisMapper">
-    <!-- 解析按题目 ID 和用户 ID 独立幂等保存，导入题目不会覆盖该表。 -->
+    <sql id="Base_Column_List">
+        QUESTION_ID, USER_ID, ANALYSIS_CONTENT, ANALYSIS_IMAGE_BASE64, CREATED_TIME, UPDATED_TIME
+    </sql>
+
+    <!--
+      永久数据保护红线：本 Mapper 禁止 DELETE/TRUNCATE；只允许按 (USER_ID, QUESTION_ID)
+      这一复合主键精确覆盖同一条解析。导入或清空题目不能删除解析。
+    -->
     <insert id="upsert" parameterType="com.lvwyh.reviewx.web.entity.question.QuestionAnalysis">
         INSERT INTO QUESTION_ANALYSIS (
             QUESTION_ID, USER_ID, ANALYSIS_CONTENT, ANALYSIS_IMAGE_BASE64, CREATED_TIME, UPDATED_TIME
@@ -13,4 +20,18 @@
             ANALYSIS_IMAGE_BASE64 = VALUES(ANALYSIS_IMAGE_BASE64),
             UPDATED_TIME = VALUES(UPDATED_TIME)
     </insert>
+
+    <select id="countByUserId" resultType="long">
+        SELECT COUNT(1)
+        FROM QUESTION_ANALYSIS
+        WHERE USER_ID = #{userId}
+    </select>
+
+    <select id="selectPageByUserId" resultType="com.lvwyh.reviewx.web.entity.question.QuestionAnalysis">
+        SELECT <include refid="Base_Column_List"/>
+        FROM QUESTION_ANALYSIS
+        WHERE USER_ID = #{userId}
+        ORDER BY UPDATED_TIME ASC, QUESTION_ID ASC
+        LIMIT #{offset}, #{pageSize}
+    </select>
 </mapper>

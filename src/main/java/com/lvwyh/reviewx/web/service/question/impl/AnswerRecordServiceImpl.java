@@ -14,12 +14,15 @@ import com.lvwyh.reviewx.web.vo.practice.AnswerRecordVO;
 import com.lvwyh.reviewx.web.vo.practice.SubmitAnswerVO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * 答题记录服务实现。
@@ -59,6 +62,7 @@ public class AnswerRecordServiceImpl extends QuestionConvertSupport implements A
         }
 
         List<String> selected = normalizeAnswers(ao.getSelectedAnswer());
+        validateSelectedAnswers(question, selected);
         List<String> correct = normalizeAnswers(parseAnswer(question.getAnswerContent()));
         boolean isCorrect = selected.equals(correct);
 
@@ -87,6 +91,24 @@ public class AnswerRecordServiceImpl extends QuestionConvertSupport implements A
         vo.setAnswerSource(question.getAnswerSource());
         vo.setDurationMs(durationMs(ao.getStartTime(), ao.getEndTime()));
         return vo;
+    }
+
+    /** 拒绝重复答案以及不存在的选项，避免把无效作答永久写入历史记录。 */
+    private void validateSelectedAnswers(Question question, List<String> selected) {
+        String[] options = new String[]{question.getOption1(), question.getOption2(), question.getOption3(), question.getOption4(),
+                question.getOption5(), question.getOption6(), question.getOption7(), question.getOption8()};
+        Set<String> unique = new HashSet<String>();
+        for (String answer : selected) {
+            if (answer.length() != 1 || answer.charAt(0) < 'A' || answer.charAt(0) > 'H') {
+                throw new BusinessException(400, "答案只能是A到H");
+            }
+            if (!unique.add(answer)) {
+                throw new BusinessException(400, "选择答案不能重复");
+            }
+            if (!StringUtils.hasText(options[answer.charAt(0) - 'A'])) {
+                throw new BusinessException(400, "答案 " + answer + " 对应的选项不存在");
+            }
+        }
     }
 
     /**

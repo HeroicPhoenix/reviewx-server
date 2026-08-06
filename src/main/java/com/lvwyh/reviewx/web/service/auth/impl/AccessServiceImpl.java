@@ -74,8 +74,13 @@ public class AccessServiceImpl implements AccessService {
         if (existed != null) {
             return existed.getTokenVersion();
         }
+        // 初始化 SQL 为幂等写入，兼容同一旧用户的多个首次请求并发到达。
         sysUserTokenVersionMapper.insert(userId, 1);
-        return 1;
+        SysUserTokenVersion initialized = sysUserTokenVersionMapper.selectByUserId(userId);
+        if (initialized == null) {
+            throw new BusinessException("初始化用户令牌版本失败");
+        }
+        return initialized.getTokenVersion();
     }
 
     /**

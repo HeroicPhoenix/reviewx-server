@@ -54,13 +54,19 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
     private final AccessService accessService;
 
     private final ApiKeyAuthService apiKeyAuthService;
+    private final AdminNetworkAccessService adminNetworkAccessService;
+    private final ClientAddressResolver clientAddressResolver;
 
     public JwtAuthInterceptor(TokenService tokenService,
                               AccessService accessService,
-                              ApiKeyAuthService apiKeyAuthService) {
+                              ApiKeyAuthService apiKeyAuthService,
+                              AdminNetworkAccessService adminNetworkAccessService,
+                              ClientAddressResolver clientAddressResolver) {
         this.tokenService = tokenService;
         this.accessService = accessService;
         this.apiKeyAuthService = apiKeyAuthService;
+        this.adminNetworkAccessService = adminNetworkAccessService;
+        this.clientAddressResolver = clientAddressResolver;
     }
 
     /**
@@ -77,13 +83,17 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
 
         String authorization = request.getHeader(HEADER_AUTHORIZATION);
         if (StringUtils.hasText(authorization) && authorization.startsWith(BEARER_PREFIX)) {
-            authenticateByJwt(authorization);
+            LoginUser loginUser = authenticateByJwt(authorization);
+            checkAdminNetworkAccess(request, loginUser);
+            LoginUserContext.set(loginUser);
             return true;
         }
 
         String apiKey = request.getHeader(HEADER_API_KEY);
         if (StringUtils.hasText(apiKey)) {
-            LoginUserContext.set(apiKeyAuthService.authenticate(apiKey));
+            LoginUser loginUser = apiKeyAuthService.authenticate(apiKey);
+            checkAdminNetworkAccess(request, loginUser);
+            LoginUserContext.set(loginUser);
             return true;
         }
 
@@ -93,7 +103,7 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
     /**
      * 使用 JWT Bearer Token 认证。
      */
-    private void authenticateByJwt(String authorization) {
+    private LoginUser authenticateByJwt(String authorization) {
         TokenClaims claims = tokenService.parse(authorization.substring(BEARER_PREFIX.length()));
         if (claims.getUserId() == null || claims.getTokenVersion() == null) {
             throw new BusinessException(401, "访问令牌无效");
@@ -103,7 +113,11 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
         if (!claims.getTokenVersion().equals(loginUser.getTokenVersion())) {
             throw new BusinessException(401, "访问令牌已失效，请重新登录");
         }
-        LoginUserContext.set(loginUser);
+        return loginUser;
+    }
+
+    private void checkAdminNetworkAccess(HttpServletRequest request, LoginUser loginUser) {
+        adminNetworkAccessService.checkAllowed(loginUser, clientAddressResolver.resolve(request));
     }
 
     /**

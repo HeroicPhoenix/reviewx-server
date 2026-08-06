@@ -22,6 +22,16 @@
         SELECT <include refid="Base_Column_List"/> FROM SYS_USER WHERE USERNAME = #{username} LIMIT 1
     </select>
 
+    <select id="countActiveByRoleCode" resultType="long">
+        SELECT COUNT(1)
+        FROM SYS_USER u
+        INNER JOIN SYS_USER_ROLE ur ON ur.USER_ID = u.USER_ID
+        INNER JOIN SYS_ROLE r ON r.ROLE_ID = ur.ROLE_ID
+        WHERE r.ROLE_CODE = #{roleCode}
+          AND r.ROLE_STATUS = 1
+          AND u.USER_STATUS = 1
+    </select>
+
     <!-- 查询有效用户列表，供管理员查看。 -->
     <select id="selectActiveUsers" resultType="com.lvwyh.reviewx.web.entity.auth.SysUser">
         SELECT <include refid="Base_Column_List"/>

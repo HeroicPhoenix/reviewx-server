@@ -23,6 +23,9 @@ public interface SysUserMapper {
     /** 按登录用户名查询用户，用于登录和唯一性判断。 */
     SysUser selectByUsername(@Param("username") String username);
 
+    /** 统计当前可正常使用的指定角色用户数量。 */
+    long countActiveByRoleCode(@Param("roleCode") String roleCode);
+
     /** 查询未逻辑删除的用户列表。 */
     List<SysUser> selectActiveUsers();
 

@@ -62,8 +62,9 @@ reviewx:
   jwt:
     secret: ${REVIEWX_JWT_SECRET}
     expire-seconds: ${REVIEWX_JWT_EXPIRE_SECONDS:86400}
-  bootstrap-admin:
-    enabled: ${REVIEWX_BOOTSTRAP_ADMIN_ENABLED:false}
-    username: ${REVIEWX_BOOTSTRAP_ADMIN_USERNAME:}
-    password: ${REVIEWX_BOOTSTRAP_ADMIN_PASSWORD:}
-    nick-name: ${REVIEWX_BOOTSTRAP_ADMIN_NICKNAME:超级管理员}
+  admin:
+    create-if-missing: ${REVIEWX_ADMIN_CREATE_IF_MISSING:false}
+    username: ${REVIEWX_ADMIN_USERNAME:}
+    password: ${REVIEWX_ADMIN_PASSWORD:}
+    nick-name: ${REVIEWX_ADMIN_NICKNAME:超级管理员}
+    allowed-ip-addresses: ${REVIEWX_ADMIN_ALLOWED_IP_ADDRESSES:}

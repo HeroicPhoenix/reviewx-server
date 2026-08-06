@@ -3,6 +3,7 @@ package com.lvwyh.reviewx.web.controller.auth;
 import com.lvwyh.reviewx.web.ao.auth.ChangePasswordAO;
 import com.lvwyh.reviewx.web.ao.auth.LoginAO;
 import com.lvwyh.reviewx.web.common.response.ApiResponse;
+import com.lvwyh.reviewx.web.security.ClientAddressResolver;
 import com.lvwyh.reviewx.web.security.LoginUserContext;
 import com.lvwyh.reviewx.web.security.RequirePermission;
 import com.lvwyh.reviewx.web.service.auth.AuthService;
@@ -36,9 +37,12 @@ public class AuthController {
     private static final Logger log = LogManager.getLogger(AuthController.class);
 
     private final AuthService authService;
+    private final ClientAddressResolver clientAddressResolver;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService,
+                          ClientAddressResolver clientAddressResolver) {
         this.authService = authService;
+        this.clientAddressResolver = clientAddressResolver;
     }
 
     /**
@@ -50,16 +54,8 @@ public class AuthController {
     @PostMapping("/login")
     public ApiResponse<LoginVO> login(@Valid @RequestBody LoginAO ao, HttpServletRequest request) {
         log.info("Login request: username={}", ao.getUsername());
-        return ApiResponse.success("登录成功", authService.login(ao.getUsername(), ao.getPassword(), clientAddress(request)));
-    }
-
-    private String clientAddress(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.trim().isEmpty()) {
-            String[] addresses = forwarded.split(",");
-            return addresses[addresses.length - 1].trim();
-        }
-        return request.getRemoteAddr();
+        return ApiResponse.success("登录成功", authService.login(
+                ao.getUsername(), ao.getPassword(), clientAddressResolver.resolve(request)));
     }
 
     /**

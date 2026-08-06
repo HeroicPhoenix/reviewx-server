@@ -6,9 +6,9 @@
         SELECT USER_ID, TOKEN_VERSION FROM SYS_USER_TOKEN_VERSION WHERE USER_ID = #{userId}
     </select>
 
-    <!-- 初始化用户 Token 版本，首次登录或默认管理员初始化时使用。 -->
+    <!-- 幂等初始化，避免旧用户首次并发请求因重复主键导致认证失败。 -->
     <insert id="insert">
-        INSERT INTO SYS_USER_TOKEN_VERSION (USER_ID, TOKEN_VERSION) VALUES (#{userId}, #{tokenVersion})
+        INSERT IGNORE INTO SYS_USER_TOKEN_VERSION (USER_ID, TOKEN_VERSION) VALUES (#{userId}, #{tokenVersion})
     </insert>
 
     <!-- 更新 Token 版本；登出或改密后旧 Token 会因版本不一致而失效。 -->

@@ -30,7 +30,7 @@ RUN mvn -q -B -s /root/.m2/settings.xml dependency:go-offline -DskipTests
 # 复制源码和资源并构建当前单模块 Spring Boot 应用。
 COPY src /app/src
 COPY docs /app/docs
-RUN mvn -q -B -s /root/.m2/settings.xml clean package -DskipTests
+RUN mvn -q -B -s /root/.m2/settings.xml clean package
 
 # =========================
 # Runtime stage

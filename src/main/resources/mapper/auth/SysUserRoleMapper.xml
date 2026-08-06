@@ -10,4 +10,5 @@
     <select id="countByUserIdAndRoleId" resultType="long">
         SELECT COUNT(1) FROM SYS_USER_ROLE WHERE USER_ID = #{userId} AND ROLE_ID = #{roleId}
     </select>
+
 </mapper>

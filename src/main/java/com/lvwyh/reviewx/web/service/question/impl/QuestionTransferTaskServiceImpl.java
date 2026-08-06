@@ -5,6 +5,8 @@ import com.lvwyh.reviewx.web.service.question.QuestionJsonTransferService;
 import com.lvwyh.reviewx.web.service.question.QuestionTransferTaskService;
 import com.lvwyh.reviewx.web.vo.question.QuestionJsonImportResultVO;
 import com.lvwyh.reviewx.web.vo.question.QuestionTransferTaskVO;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -28,6 +30,7 @@ import java.util.concurrent.Executor;
 @Service
 public class QuestionTransferTaskServiceImpl implements QuestionTransferTaskService {
 
+    private static final Logger log = LogManager.getLogger(QuestionTransferTaskServiceImpl.class);
     private static final long TASK_EXPIRE_MILLIS = 2 * 60 * 60 * 1000L;
 
     private final QuestionJsonTransferService transferService;
@@ -134,7 +137,13 @@ public class QuestionTransferTaskServiceImpl implements QuestionTransferTaskServ
 
     private void fail(TaskState task, Exception e) {
         task.status = "failed";
-        task.message = StringUtils.hasText(e.getMessage()) ? e.getMessage() : "任务处理失败";
+        if (e instanceof BusinessException && StringUtils.hasText(e.getMessage())) {
+            task.message = e.getMessage();
+        } else {
+            // 非业务异常的数据库、文件路径和堆栈细节只写服务端日志，不能通过轮询接口暴露给前端。
+            log.error("题库{}任务执行失败，taskId={}，userId={}", task.taskType, task.taskId, task.userId, e);
+            task.message = "任务处理失败，请稍后重试";
+        }
         deleteFile(task.tempFile);
         task.tempFile = null;
     }

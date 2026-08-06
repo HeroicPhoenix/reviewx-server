@@ -16,4 +16,5 @@ public interface SysUserRoleMapper {
 
     /** 判断指定用户和角色是否已经绑定。 */
     long countByUserIdAndRoleId(@Param("userId") Long userId, @Param("roleId") Long roleId);
+
 }

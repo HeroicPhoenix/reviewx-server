@@ -116,7 +116,10 @@ public class QuestionServiceImpl extends QuestionConvertSupport implements Quest
         if (updated != 1) {
             throw new BusinessException("保存题目失败");
         }
-        questionAnalysisMapper.upsert(toQuestionAnalysis(userId, ao.getQuestionId(), ao.getAnalysisContent(), ao.getAnalysisImageBase64(), now));
+        // 题目编辑请求未携带解析字段时必须保留原解析；只有显式提交解析字段才允许覆盖同一复合主键记录。
+        if (ao.getAnalysisContent() != null || ao.getAnalysisImageBase64() != null) {
+            questionAnalysisMapper.upsert(toQuestionAnalysis(userId, ao.getQuestionId(), ao.getAnalysisContent(), ao.getAnalysisImageBase64(), now));
+        }
         return detail(userId, ao.getQuestionId());
     }
 

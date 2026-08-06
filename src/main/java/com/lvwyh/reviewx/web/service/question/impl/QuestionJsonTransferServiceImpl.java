@@ -53,7 +53,11 @@ public class QuestionJsonTransferServiceImpl implements QuestionJsonTransferServ
     @Transactional(readOnly = true)
     public void exportJsonTo(Long userId, String scope, OutputStream outputStream, ProgressListener listener) {
         String validScope = validScope(scope);
-        long totalValue = questionMapper.countForExport(userId);
+        boolean analysisOnly = SCOPE_ANALYSIS.equals(validScope);
+        // “仅解析”必须从解析表直接导出，不能依赖题目表，否则清空题目后保留的解析无法备份。
+        long totalValue = analysisOnly
+                ? questionAnalysisMapper.countByUserId(userId)
+                : questionMapper.countForExport(userId);
         int total = totalValue > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) totalValue;
         int processed = 0;
         int offset = 0;
@@ -65,14 +69,29 @@ public class QuestionJsonTransferServiceImpl implements QuestionJsonTransferServ
             generator.writeStringField("exportedAt", LocalDateTime.now().toString());
             generator.writeArrayFieldStart("items");
             while (true) {
+                if (analysisOnly) {
+                    List<QuestionAnalysis> analyses = questionAnalysisMapper.selectPageByUserId(userId, offset, EXPORT_PAGE_SIZE);
+                    if (analyses == null || analyses.isEmpty()) break;
+                    for (QuestionAnalysis analysis : analyses) {
+                        ObjectNode item = objectMapper.createObjectNode();
+                        item.put("questionId", analysis.getQuestionId());
+                        putNullable(item, "analysisContent", analysis.getAnalysisContent());
+                        putNullable(item, "analysisImageBase64", analysis.getAnalysisImageBase64());
+                        generator.writeTree(item);
+                        processed++;
+                        notifyProgress(listener, processed, total);
+                    }
+                    offset += analyses.size();
+                    if (analyses.size() < EXPORT_PAGE_SIZE) break;
+                    continue;
+                }
+
                 java.util.List<Question> questions = questionMapper.selectForExportPage(userId, offset, EXPORT_PAGE_SIZE);
                 if (questions == null || questions.isEmpty()) break;
                 for (Question question : questions) {
                     ObjectNode item = objectMapper.createObjectNode();
                     item.put("questionId", question.getQuestionId());
-                    if (!SCOPE_ANALYSIS.equals(validScope)) {
-                        writeQuestion(item, question);
-                    }
+                    writeQuestion(item, question);
                     if (!SCOPE_QUESTION.equals(validScope)) {
                         putNullable(item, "analysisContent", question.getAnalysisContent());
                         putNullable(item, "analysisImageBase64", question.getAnalysisImageBase64());
@@ -244,7 +263,8 @@ public class QuestionJsonTransferServiceImpl implements QuestionJsonTransferServ
             if (item == null || !item.isObject()) {
                 throw new BusinessException(400, "JSON items 中只能包含对象");
             }
-            hasQuestionPayload &= item.has("questionContent") || item.has("answerContent");
+            // 一条可导入题目必须同时包含题干和答案；只有其中一个字段不能视为完整题目数据。
+            hasQuestionPayload &= item.has("questionContent") && item.has("answerContent");
             hasAnalysisPayload &= item.has("analysisContent") || item.has("analysisImageBase64");
         }
         if (SCOPE_QUESTION.equals(scope) && !hasQuestionPayload) {

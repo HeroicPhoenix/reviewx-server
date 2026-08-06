@@ -4,6 +4,7 @@ import com.lvwyh.reviewx.web.common.exception.BusinessException;
 import com.lvwyh.reviewx.web.config.security.JwtProperties;
 import com.lvwyh.reviewx.web.entity.auth.SysUser;
 import com.lvwyh.reviewx.web.mapper.auth.SysUserMapper;
+import com.lvwyh.reviewx.web.security.AdminNetworkAccessService;
 import com.lvwyh.reviewx.web.security.LoginUser;
 import com.lvwyh.reviewx.web.service.auth.AccessService;
 import com.lvwyh.reviewx.web.service.auth.AuthService;
@@ -34,19 +35,22 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtProperties jwtProperties;
     private final LoginAttemptService loginAttemptService;
+    private final AdminNetworkAccessService adminNetworkAccessService;
 
     public AuthServiceImpl(SysUserMapper sysUserMapper,
                            AccessService accessService,
                            TokenService tokenService,
                            PasswordEncoder passwordEncoder,
                            JwtProperties jwtProperties,
-                           LoginAttemptService loginAttemptService) {
+                           LoginAttemptService loginAttemptService,
+                           AdminNetworkAccessService adminNetworkAccessService) {
         this.sysUserMapper = sysUserMapper;
         this.accessService = accessService;
         this.tokenService = tokenService;
         this.passwordEncoder = passwordEncoder;
         this.jwtProperties = jwtProperties;
         this.loginAttemptService = loginAttemptService;
+        this.adminNetworkAccessService = adminNetworkAccessService;
     }
 
     /**
@@ -66,11 +70,13 @@ public class AuthServiceImpl implements AuthService {
             loginAttemptService.recordFailure(username, clientAddress);
             throw new BusinessException(401, "用户名或密码错误");
         }
+        LoginUser loginUser = accessService.loadLoginUser(user.getUserId());
+        adminNetworkAccessService.checkAllowed(loginUser, clientAddress);
         loginAttemptService.recordSuccess(username);
 
-        Integer tokenVersion = accessService.getTokenVersionOrInit(user.getUserId());
         LoginVO vo = new LoginVO();
-        vo.setAccessToken(tokenService.generate(user.getUserId(), user.getUsername(), tokenVersion));
+        vo.setAccessToken(tokenService.generate(
+                user.getUserId(), user.getUsername(), loginUser.getTokenVersion()));
         vo.setTokenType("Bearer");
         vo.setExpireIn(jwtProperties.getExpireSeconds());
         return vo;

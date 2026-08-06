@@ -4,6 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
+import javax.validation.constraints.Size;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -22,7 +24,8 @@ public class SubmitAnswerAO implements Serializable {
 
     /** 用户选择的答案列表，单选题也用数组表示，例如 ["B"]。 */
     @NotEmpty(message = "选择答案不能为空")
-    private List<String> selectedAnswer;
+    @Size(max = 8, message = "选择答案最多支持8项")
+    private List<@Pattern(regexp = "^[A-Ha-h]$", message = "答案只能是A到H") String> selectedAnswer;
 
     /** 用户开始看题或开始作答的时间。 */
     @NotNull(message = "开始作答时间不能为空")
