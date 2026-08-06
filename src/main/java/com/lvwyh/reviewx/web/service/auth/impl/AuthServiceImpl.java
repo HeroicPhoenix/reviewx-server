@@ -1,10 +1,10 @@
 package com.lvwyh.reviewx.web.service.auth.impl;
 
 import com.lvwyh.reviewx.web.common.exception.BusinessException;
+import com.lvwyh.reviewx.web.config.security.AdminProperties;
 import com.lvwyh.reviewx.web.config.security.JwtProperties;
 import com.lvwyh.reviewx.web.entity.auth.SysUser;
 import com.lvwyh.reviewx.web.mapper.auth.SysUserMapper;
-import com.lvwyh.reviewx.web.security.AdminNetworkAccessService;
 import com.lvwyh.reviewx.web.security.LoginUser;
 import com.lvwyh.reviewx.web.service.auth.AccessService;
 import com.lvwyh.reviewx.web.service.auth.AuthService;
@@ -30,6 +30,7 @@ import java.util.List;
 public class AuthServiceImpl implements AuthService {
 
     private static final String INVALID_CREDENTIALS_MESSAGE = "用户名或密码错误";
+    private static final String ADMIN_ROLE_CODE = "ADMIN";
 
     private final SysUserMapper sysUserMapper;
     private final AccessService accessService;
@@ -37,7 +38,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtProperties jwtProperties;
     private final LoginAttemptService loginAttemptService;
-    private final AdminNetworkAccessService adminNetworkAccessService;
+    private final AdminProperties adminProperties;
 
     public AuthServiceImpl(SysUserMapper sysUserMapper,
                            AccessService accessService,
@@ -45,14 +46,14 @@ public class AuthServiceImpl implements AuthService {
                            PasswordEncoder passwordEncoder,
                            JwtProperties jwtProperties,
                            LoginAttemptService loginAttemptService,
-                           AdminNetworkAccessService adminNetworkAccessService) {
+                           AdminProperties adminProperties) {
         this.sysUserMapper = sysUserMapper;
         this.accessService = accessService;
         this.tokenService = tokenService;
         this.passwordEncoder = passwordEncoder;
         this.jwtProperties = jwtProperties;
         this.loginAttemptService = loginAttemptService;
-        this.adminNetworkAccessService = adminNetworkAccessService;
+        this.adminProperties = adminProperties;
     }
 
     /**
@@ -69,15 +70,10 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException(401, INVALID_CREDENTIALS_MESSAGE);
         }
 
-        // 对非白名单来源的管理员请求先做网络拒绝，不验证其密码，避免通过响应或处理分支判断密码是否正确。
         LoginUser loginUser = accessService.loadLoginUser(user.getUserId());
-        try {
-            adminNetworkAccessService.checkAllowed(loginUser, clientAddress);
-        } catch (BusinessException e) {
-            if (e.getCode() != 403) {
-                throw e;
-            }
-            loginAttemptService.recordAddressFailure(clientAddress);
+        // 管理员登录开关关闭时不验证密码，所有来源统一按凭证错误处理。
+        if (loginUser.getRoleCodes().contains(ADMIN_ROLE_CODE) && !adminProperties.isLoginEnabled()) {
+            loginAttemptService.recordFailure(username, clientAddress);
             throw new BusinessException(401, INVALID_CREDENTIALS_MESSAGE);
         }
 

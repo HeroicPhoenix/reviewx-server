@@ -54,19 +54,13 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
     private final AccessService accessService;
 
     private final ApiKeyAuthService apiKeyAuthService;
-    private final AdminNetworkAccessService adminNetworkAccessService;
-    private final ClientAddressResolver clientAddressResolver;
 
     public JwtAuthInterceptor(TokenService tokenService,
                               AccessService accessService,
-                              ApiKeyAuthService apiKeyAuthService,
-                              AdminNetworkAccessService adminNetworkAccessService,
-                              ClientAddressResolver clientAddressResolver) {
+                              ApiKeyAuthService apiKeyAuthService) {
         this.tokenService = tokenService;
         this.accessService = accessService;
         this.apiKeyAuthService = apiKeyAuthService;
-        this.adminNetworkAccessService = adminNetworkAccessService;
-        this.clientAddressResolver = clientAddressResolver;
     }
 
     /**
@@ -84,7 +78,6 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
         String authorization = request.getHeader(HEADER_AUTHORIZATION);
         if (StringUtils.hasText(authorization) && authorization.startsWith(BEARER_PREFIX)) {
             LoginUser loginUser = authenticateByJwt(authorization);
-            checkAdminNetworkAccess(request, loginUser);
             LoginUserContext.set(loginUser);
             return true;
         }
@@ -92,7 +85,6 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
         String apiKey = request.getHeader(HEADER_API_KEY);
         if (StringUtils.hasText(apiKey)) {
             LoginUser loginUser = apiKeyAuthService.authenticate(apiKey);
-            checkAdminNetworkAccess(request, loginUser);
             LoginUserContext.set(loginUser);
             return true;
         }
@@ -114,10 +106,6 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
             throw new BusinessException(401, "访问令牌已失效，请重新登录");
         }
         return loginUser;
-    }
-
-    private void checkAdminNetworkAccess(HttpServletRequest request, LoginUser loginUser) {
-        adminNetworkAccessService.checkAllowed(loginUser, clientAddressResolver.resolve(request));
     }
 
     /**

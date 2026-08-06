@@ -31,15 +31,6 @@ public class LoginAttemptService {
         fail(key("address", normalize(address)), ADDRESS_FAILURE_LIMIT, now);
     }
 
-    /**
-     * 记录来源地址失败但不锁定账号。
-     *
-     * 用于管理员非白名单登录：该请求根本不校验密码，不能让公网攻击者仅凭用户名锁死局域网管理员账号。
-     */
-    public void recordAddressFailure(String address) {
-        fail(key("address", normalize(address)), ADDRESS_FAILURE_LIMIT, System.currentTimeMillis());
-    }
-
     public void recordSuccess(String username) {
         attempts.remove(key("account", normalize(username)));
     }

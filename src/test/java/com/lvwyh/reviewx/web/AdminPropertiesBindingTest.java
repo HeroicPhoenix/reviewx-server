@@ -6,22 +6,23 @@ import org.springframework.boot.context.properties.bind.Bindable;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.mock.env.MockEnvironment;
 
-import java.util.Arrays;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** 管理员环境变量对应属性的绑定回归测试。 */
 class AdminPropertiesBindingTest {
 
     @Test
-    void commaSeparatedAllowedAddressesMustBindAsAList() {
+    void loginEnabledMustDefaultToTrueAndBindFalse() {
+        assertTrue(new AdminProperties().isLoginEnabled());
+
         MockEnvironment environment = new MockEnvironment()
-                .withProperty("reviewx.admin.allowed-ip-addresses", "192.168.3.91,192.168.3.92");
+                .withProperty("reviewx.admin.login-enabled", "false");
 
         AdminProperties properties = Binder.get(environment)
                 .bind("reviewx.admin", Bindable.of(AdminProperties.class))
                 .orElseGet(AdminProperties::new);
 
-        assertEquals(Arrays.asList("192.168.3.91", "192.168.3.92"), properties.getAllowedIpAddresses());
+        assertFalse(properties.isLoginEnabled());
     }
 }

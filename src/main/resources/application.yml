@@ -67,4 +67,4 @@ reviewx:
     username: ${REVIEWX_ADMIN_USERNAME:}
     password: ${REVIEWX_ADMIN_PASSWORD:}
     nick-name: ${REVIEWX_ADMIN_NICKNAME:超级管理员}
-    allowed-ip-addresses: ${REVIEWX_ADMIN_ALLOWED_IP_ADDRESSES:}
+    login-enabled: ${REVIEWX_ADMIN_LOGIN_ENABLED:true}

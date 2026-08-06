@@ -3,10 +3,7 @@ package com.lvwyh.reviewx.web.config.security;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.List;
-
-/** 超级管理员创建与来源 IP 白名单配置。 */
+/** 超级管理员创建与登录开关配置。 */
 @Component
 @ConfigurationProperties(prefix = "reviewx.admin")
 public class AdminProperties {
@@ -18,8 +15,8 @@ public class AdminProperties {
     private String password;
     private String nickName = "超级管理员";
 
-    /** ADMIN 角色允许登录和访问的客户端 IP 列表；空列表表示全部拒绝。 */
-    private List<String> allowedIpAddresses = new ArrayList<String>();
+    /** 是否允许 ADMIN 角色登录；默认允许，关闭后所有来源均不能登录。 */
+    private boolean loginEnabled = true;
 
     public boolean isCreateIfMissing() { return createIfMissing; }
     public void setCreateIfMissing(boolean createIfMissing) { this.createIfMissing = createIfMissing; }
@@ -29,9 +26,6 @@ public class AdminProperties {
     public void setPassword(String password) { this.password = password; }
     public String getNickName() { return nickName; }
     public void setNickName(String nickName) { this.nickName = nickName; }
-    public List<String> getAllowedIpAddresses() { return allowedIpAddresses; }
-    public void setAllowedIpAddresses(List<String> allowedIpAddresses) {
-        this.allowedIpAddresses = allowedIpAddresses == null
-                ? new ArrayList<String>() : new ArrayList<String>(allowedIpAddresses);
-    }
+    public boolean isLoginEnabled() { return loginEnabled; }
+    public void setLoginEnabled(boolean loginEnabled) { this.loginEnabled = loginEnabled; }
 }

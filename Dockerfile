@@ -44,6 +44,8 @@ ENV JAVA_OPTS=""
 
 # 服务端口来自 application.yml：server.port=${PORT:58080}
 ENV PORT=58080
+# 是否允许 ADMIN 角色登录；可在 Docker/Compose 中覆盖为 false。
+ENV REVIEWX_ADMIN_LOGIN_ENABLED=true
 
 COPY --from=builder /app/target/reviewx-server-1.0-SNAPSHOT.jar /opt/reviewx-server/app.jar
 
