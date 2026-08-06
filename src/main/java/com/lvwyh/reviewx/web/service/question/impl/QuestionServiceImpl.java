@@ -12,6 +12,7 @@ import com.lvwyh.reviewx.web.mapper.question.QuestionMapper;
 import com.lvwyh.reviewx.web.service.question.QuestionService;
 import com.lvwyh.reviewx.web.vo.question.QuestionVO;
 import com.lvwyh.reviewx.web.vo.question.QuestionOverviewStatVO;
+import com.lvwyh.reviewx.web.vo.question.QuestionCategoryStatVO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -170,10 +171,14 @@ public class QuestionServiceImpl extends QuestionConvertSupport implements Quest
      * 查询概览页题库统计，通过数据库分组一次获取图表数据。
      */
     @Override
-    public QuestionOverviewStatVO overviewStat(Long userId) {
+    public QuestionOverviewStatVO overviewStat(Long userId, String analysisScope) {
+        List<QuestionCategoryStatVO> categoryCounts =
+                questionMapper.selectCategoryCounts(userId, validAnalysisScope(analysisScope));
         QuestionOverviewStatVO result = new QuestionOverviewStatVO();
-        result.setTotalCount(questionMapper.countSearch(userId, null, null, null, null, null));
-        result.setCategoryCounts(questionMapper.selectCategoryCounts(userId));
+        result.setTotalCount(categoryCounts.stream()
+                .mapToLong(item -> item.getCount() == null ? 0L : item.getCount())
+                .sum());
+        result.setCategoryCounts(categoryCounts);
         result.setDailyCounts(questionMapper.selectDailyCounts(userId));
         return result;
     }

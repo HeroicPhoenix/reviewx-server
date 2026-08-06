@@ -40,7 +40,7 @@ public interface QuestionService {
     List<String> questionJoinDates(Long userId);
 
     /** 查询概览页所需的题库分类和每日新增统计。 */
-    QuestionOverviewStatVO overviewStat(Long userId);
+    QuestionOverviewStatVO overviewStat(Long userId, String analysisScope);
 
     /** 随机抽题，不返回正确答案。 */
     List<QuestionVO> randomList(Long userId, String questionType, String questionYear, String questionSource, String questionJoinDate, String randomScope, String analysisScope, Integer size);

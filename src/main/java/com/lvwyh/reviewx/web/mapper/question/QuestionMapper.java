@@ -67,7 +67,8 @@ public interface QuestionMapper {
     List<String> selectQuestionJoinDates(@Param("userId") Long userId);
 
     /** 按数据库分类字段统计当前用户的启用题目数量。 */
-    List<QuestionCategoryStatVO> selectCategoryCounts(@Param("userId") Long userId);
+    List<QuestionCategoryStatVO> selectCategoryCounts(@Param("userId") Long userId,
+                                                      @Param("analysisScope") String analysisScope);
 
     /** 按加入日期统计当前用户每日新增的启用题目数量。 */
     List<QuestionDailyStatVO> selectDailyCounts(@Param("userId") Long userId);

@@ -203,12 +203,30 @@
 
     <!-- 概览饼图：按题目分类统计数量，空分类合并为“未分类”。 -->
     <select id="selectCategoryCounts" resultType="com.lvwyh.reviewx.web.vo.question.QuestionCategoryStatVO">
-        SELECT COALESCE(NULLIF(TRIM(QUESTION_CATEGORY), ''), '未分类') AS category,
-               COUNT(1) AS `count`
-        FROM QUESTION
-        WHERE QUESTION_STATUS = 1
-          AND USER_ID = #{userId}
-        GROUP BY COALESCE(NULLIF(TRIM(QUESTION_CATEGORY), ''), '未分类')
+        SELECT COALESCE(NULLIF(TRIM(q.QUESTION_CATEGORY), ''), '未分类') AS category,
+               COUNT(DISTINCT q.ID) AS `count`
+        FROM QUESTION q
+        LEFT JOIN QUESTION_ANALYSIS qa
+          ON qa.USER_ID = q.USER_ID
+         AND qa.QUESTION_ID = q.QUESTION_ID
+        WHERE q.QUESTION_STATUS = 1
+          AND q.USER_ID = #{userId}
+        <if test="analysisScope == 'analyzed'">
+            AND (
+                (qa.ANALYSIS_CONTENT IS NOT NULL AND qa.ANALYSIS_CONTENT != '')
+                OR (qa.ANALYSIS_IMAGE_BASE64 IS NOT NULL AND qa.ANALYSIS_IMAGE_BASE64 != '')
+            )
+        </if>
+        <if test="analysisScope == 'unanalyzed'">
+            AND (
+                qa.QUESTION_ID IS NULL
+                OR (
+                    (qa.ANALYSIS_CONTENT IS NULL OR qa.ANALYSIS_CONTENT = '')
+                    AND (qa.ANALYSIS_IMAGE_BASE64 IS NULL OR qa.ANALYSIS_IMAGE_BASE64 = '')
+                )
+            )
+        </if>
+        GROUP BY COALESCE(NULLIF(TRIM(q.QUESTION_CATEGORY), ''), '未分类')
         ORDER BY `count` DESC, category ASC
     </select>
 

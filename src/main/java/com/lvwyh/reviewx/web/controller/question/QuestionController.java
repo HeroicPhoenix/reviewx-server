@@ -176,9 +176,11 @@ public class QuestionController {
     @Operation(summary = "查询题库概览统计")
     @RequirePermission("question:search")
     @GetMapping("/overviewStat")
-    public ApiResponse<QuestionOverviewStatVO> overviewStat() {
+    public ApiResponse<QuestionOverviewStatVO> overviewStat(
+            @Pattern(regexp = "all|analyzed|unanalyzed", message = "解析范围参数错误")
+            @RequestParam(defaultValue = "all") String analysisScope) {
         Long userId = LoginUserContext.require().getUserId();
-        return ApiResponse.success("查询成功", questionService.overviewStat(userId));
+        return ApiResponse.success("查询成功", questionService.overviewStat(userId, analysisScope));
     }
 
     /**
