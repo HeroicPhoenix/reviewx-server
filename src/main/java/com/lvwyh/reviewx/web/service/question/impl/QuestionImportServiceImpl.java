@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lvwyh.reviewx.web.common.exception.BusinessException;
 import com.lvwyh.reviewx.web.entity.question.Question;
 import com.lvwyh.reviewx.web.mapper.question.QuestionMapper;
-import com.lvwyh.reviewx.web.mapper.question.QuestionAnalysisMapper;
 import com.lvwyh.reviewx.web.service.question.QuestionImportService;
 import com.lvwyh.reviewx.web.vo.question.QuestionImportFailureVO;
 import com.lvwyh.reviewx.web.vo.question.QuestionImportResultVO;
@@ -48,14 +47,11 @@ public class QuestionImportServiceImpl implements QuestionImportService {
     private static final long MAX_COMPRESSION_RATIO = 100L;
 
     private final QuestionMapper questionMapper;
-    private final QuestionAnalysisMapper questionAnalysisMapper;
     private final ObjectMapper objectMapper;
 
     public QuestionImportServiceImpl(QuestionMapper questionMapper,
-                                     QuestionAnalysisMapper questionAnalysisMapper,
                                      ObjectMapper objectMapper) {
         this.questionMapper = questionMapper;
-        this.questionAnalysisMapper = questionAnalysisMapper;
         this.objectMapper = objectMapper;
     }
 
@@ -87,7 +83,6 @@ public class QuestionImportServiceImpl implements QuestionImportService {
                     throw new BusinessException(400, "ZIP 预检失败 " + validation.getFailedQuestionCount()
                             + " 项，原题库未清空");
                 }
-                questionAnalysisMapper.deleteByUserId(userId);
                 questionMapper.deleteByUserId(userId);
                 return importZipFile(userId, tempFile, false, true);
             }
