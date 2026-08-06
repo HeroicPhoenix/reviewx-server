@@ -119,6 +119,10 @@ public class QuestionJsonTransferServiceImpl implements QuestionJsonTransferServ
         if (items == null || !items.isArray()) {
             throw new BusinessException(400, "JSON 根节点必须包含 items 数组");
         }
+        if (items.size() == 0) {
+            throw new BusinessException(400, "JSON items 数组不能为空");
+        }
+        validateScopeMatchesItems(validScope, items);
 
         QuestionJsonImportResultVO result = new QuestionJsonImportResultVO();
         int total = items.size();
@@ -134,11 +138,17 @@ public class QuestionJsonTransferServiceImpl implements QuestionJsonTransferServ
                 }
                 if (!SCOPE_ANALYSIS.equals(validScope)) {
                     questionMapper.upsert(toQuestion(userId, questionId.trim(), item));
-                } else if (questionMapper.selectById(userId, questionId.trim()) == null) {
-                    throw new IllegalArgumentException("当前题库不存在该题目，无法导入解析");
                 }
                 if (!SCOPE_QUESTION.equals(validScope)) {
-                    questionAnalysisMapper.upsert(toAnalysis(userId, questionId.trim(), item));
+                    if (hasNonEmptyAnalysis(item)) {
+                        questionAnalysisMapper.upsert(toAnalysis(userId, questionId.trim(), item));
+                    } else {
+                        result.increaseEmptyAnalysisSkippedCount();
+                        if (SCOPE_ANALYSIS.equals(validScope)) {
+                            notifyProgress(listener, index, total);
+                            continue;
+                        }
+                    }
                 }
                 result.increaseSuccessCount();
             } catch (Exception e) {
@@ -225,6 +235,32 @@ public class QuestionJsonTransferServiceImpl implements QuestionJsonTransferServ
         analysis.setCreatedTime(now);
         analysis.setUpdatedTime(now);
         return analysis;
+    }
+
+    private void validateScopeMatchesItems(String scope, JsonNode items) {
+        boolean hasQuestionPayload = true;
+        boolean hasAnalysisPayload = true;
+        for (JsonNode item : items) {
+            if (item == null || !item.isObject()) {
+                throw new BusinessException(400, "JSON items 中只能包含对象");
+            }
+            hasQuestionPayload &= item.has("questionContent") || item.has("answerContent");
+            hasAnalysisPayload &= item.has("analysisContent") || item.has("analysisImageBase64");
+        }
+        if (SCOPE_QUESTION.equals(scope) && !hasQuestionPayload) {
+            throw new BusinessException(400, "该 JSON 不包含题目数据，不能选择仅题目");
+        }
+        if (SCOPE_ANALYSIS.equals(scope) && !hasAnalysisPayload) {
+            throw new BusinessException(400, "该 JSON 不包含解析数据，不能选择仅解析");
+        }
+        if (SCOPE_ALL.equals(scope) && (!hasQuestionPayload || !hasAnalysisPayload)) {
+            throw new BusinessException(400, "该 JSON 未同时包含题目和解析数据，不能选择题目和解析");
+        }
+    }
+
+    private boolean hasNonEmptyAnalysis(JsonNode item) {
+        return StringUtils.hasText(text(item, "analysisContent"))
+                || StringUtils.hasText(text(item, "analysisImageBase64"));
     }
 
     private String validScope(String scope) {

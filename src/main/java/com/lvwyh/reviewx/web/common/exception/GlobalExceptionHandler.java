@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -77,6 +78,12 @@ public class GlobalExceptionHandler {
         log.warn("Request JSON parse failed: message={}",
                 cause == null ? e.getMessage() : cause.getMessage());
         return response(400, "请求JSON格式错误，请检查字段格式");
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiResponse<?>> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException e) {
+        log.warn("Upload file exceeds size limit: message={}", e.getMessage());
+        return response(413, "上传文件不能超过50MB");
     }
 
     /**

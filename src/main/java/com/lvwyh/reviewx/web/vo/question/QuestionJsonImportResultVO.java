@@ -10,6 +10,7 @@ public class QuestionJsonImportResultVO implements Serializable {
     private int totalCount;
     private int successCount;
     private int failureCount;
+    private int emptyAnalysisSkippedCount;
     private List<String> failures = new ArrayList<String>();
 
     public int getTotalCount() { return totalCount; }
@@ -18,11 +19,14 @@ public class QuestionJsonImportResultVO implements Serializable {
     public void setSuccessCount(int successCount) { this.successCount = successCount; }
     public int getFailureCount() { return failureCount; }
     public void setFailureCount(int failureCount) { this.failureCount = failureCount; }
+    public int getEmptyAnalysisSkippedCount() { return emptyAnalysisSkippedCount; }
+    public void setEmptyAnalysisSkippedCount(int emptyAnalysisSkippedCount) { this.emptyAnalysisSkippedCount = emptyAnalysisSkippedCount; }
     public List<String> getFailures() { return failures; }
     public void setFailures(List<String> failures) { this.failures = failures; }
 
     public void increaseTotalCount() { totalCount++; }
     public void increaseSuccessCount() { successCount++; }
+    public void increaseEmptyAnalysisSkippedCount() { emptyAnalysisSkippedCount++; }
 
     public void addFailure(String failure) {
         failureCount++;
