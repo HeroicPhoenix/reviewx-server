@@ -8,7 +8,7 @@ import javax.servlet.http.HttpServletRequest;
 /**
  * 解析客户端来源地址。
  *
- * 仅当请求来自本机或 Docker 常用私有网段代理时才信任代理头，避免局域网客户端
+ * 仅当请求来自本机或本项目 Docker 内部代理时才信任代理头，避免局域网客户端
  * 直接访问后端并伪造 X-Real-IP 绕过管理员地址限制。
  */
 @Component
@@ -38,6 +38,10 @@ public class ClientAddressResolver {
             return false;
         }
         if ("127.0.0.1".equals(address) || "::1".equals(address)) {
+            return true;
+        }
+        // 最新部署日志确认前端 Nginx 容器地址为 192.168.32.3；只信任这一台代理，不扩大到整个子网。
+        if ("192.168.32.3".equals(address)) {
             return true;
         }
 

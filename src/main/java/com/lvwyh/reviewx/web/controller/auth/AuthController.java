@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -53,9 +54,21 @@ public class AuthController {
     @Operation(summary = "登录并获取JWT")
     @PostMapping("/login")
     public ApiResponse<LoginVO> login(@Valid @RequestBody LoginAO ao, HttpServletRequest request) {
-        log.info("Login request: username={}", ao.getUsername());
-        return ApiResponse.success("登录成功", authService.login(
-                ao.getUsername(), ao.getPassword(), clientAddressResolver.resolve(request)));
+        String clientAddress = clientAddressResolver.resolve(request);
+        // 来源地址仅写服务端日志，登录失败响应始终不向前端暴露管理员白名单判断结果。
+        log.info("Login request: username={}, remoteAddress={}, xRealIp={}, xForwardedFor={}, clientAddress={}",
+                ao.getUsername(), logValue(request.getRemoteAddr()), logValue(request.getHeader("X-Real-IP")),
+                logValue(request.getHeader("X-Forwarded-For")), logValue(clientAddress));
+        return ApiResponse.success("登录成功", authService.login(ao.getUsername(), ao.getPassword(), clientAddress));
+    }
+
+    /** 清理并限制不可信请求头的日志长度，避免伪造换行或超长日志。 */
+    private String logValue(String value) {
+        if (!StringUtils.hasText(value)) {
+            return "-";
+        }
+        String safeValue = value.replace('\r', ' ').replace('\n', ' ').trim();
+        return safeValue.length() <= 255 ? safeValue : safeValue.substring(0, 255);
     }
 
     /**

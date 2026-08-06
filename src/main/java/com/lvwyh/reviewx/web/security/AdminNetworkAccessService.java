@@ -18,6 +18,7 @@ public class AdminNetworkAccessService {
 
     public AdminNetworkAccessService(AdminProperties properties) {
         this.properties = properties;
+        log.info("ADMIN network whitelist loaded: allowedIpAddresses={}", properties.getAllowedIpAddresses());
     }
 
     public void checkAllowed(LoginUser loginUser, String clientAddress) {
@@ -27,8 +28,8 @@ public class AdminNetworkAccessService {
         if (isAllowed(clientAddress)) {
             return;
         }
-        log.warn("Rejected ADMIN access: userId={}, username={}, clientAddress={}",
-                loginUser.getUserId(), loginUser.getUsername(), clientAddress);
+        log.warn("Rejected ADMIN access: userId={}, username={}, clientAddress={}, allowedIpAddresses={}",
+                loginUser.getUserId(), loginUser.getUsername(), clientAddress, properties.getAllowedIpAddresses());
         throw new BusinessException(403, "超级管理员仅允许从指定的局域网电脑访问");
     }
 

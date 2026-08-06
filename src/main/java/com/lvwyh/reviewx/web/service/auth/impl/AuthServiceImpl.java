@@ -29,6 +29,8 @@ import java.util.List;
 @Service
 public class AuthServiceImpl implements AuthService {
 
+    private static final String INVALID_CREDENTIALS_MESSAGE = "用户名或密码错误";
+
     private final SysUserMapper sysUserMapper;
     private final AccessService accessService;
     private final TokenService tokenService;
@@ -64,14 +66,25 @@ public class AuthServiceImpl implements AuthService {
         SysUser user = sysUserMapper.selectByUsername(username);
         if (user == null || !Integer.valueOf(1).equals(user.getUserStatus())) {
             loginAttemptService.recordFailure(username, clientAddress);
-            throw new BusinessException(401, "用户名或密码错误");
+            throw new BusinessException(401, INVALID_CREDENTIALS_MESSAGE);
         }
+
+        // 对非白名单来源的管理员请求先做网络拒绝，不验证其密码，避免通过响应或处理分支判断密码是否正确。
+        LoginUser loginUser = accessService.loadLoginUser(user.getUserId());
+        try {
+            adminNetworkAccessService.checkAllowed(loginUser, clientAddress);
+        } catch (BusinessException e) {
+            if (e.getCode() != 403) {
+                throw e;
+            }
+            loginAttemptService.recordAddressFailure(clientAddress);
+            throw new BusinessException(401, INVALID_CREDENTIALS_MESSAGE);
+        }
+
         if (!passwordEncoder.matches(password, user.getPasswordHash())) {
             loginAttemptService.recordFailure(username, clientAddress);
-            throw new BusinessException(401, "用户名或密码错误");
+            throw new BusinessException(401, INVALID_CREDENTIALS_MESSAGE);
         }
-        LoginUser loginUser = accessService.loadLoginUser(user.getUserId());
-        adminNetworkAccessService.checkAllowed(loginUser, clientAddress);
         loginAttemptService.recordSuccess(username);
 
         LoginVO vo = new LoginVO();
