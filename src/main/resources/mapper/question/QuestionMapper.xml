@@ -204,7 +204,7 @@
     <!-- 概览饼图：按题目分类统计数量，空分类合并为“未分类”。 -->
     <select id="selectCategoryCounts" resultType="com.lvwyh.reviewx.web.vo.question.QuestionCategoryStatVO">
         SELECT COALESCE(NULLIF(TRIM(q.QUESTION_CATEGORY), ''), '未分类') AS category,
-               COUNT(DISTINCT q.ID) AS `count`
+               COUNT(DISTINCT q.QUESTION_ID) AS `count`
         FROM QUESTION q
         LEFT JOIN QUESTION_ANALYSIS qa
           ON qa.USER_ID = q.USER_ID
