@@ -118,7 +118,7 @@ public class AnswerRecordServiceImpl extends QuestionConvertSupport implements A
     public PageResult<AnswerRecordVO> listPage(Long userId, String questionId, Integer isCorrect, LocalDateTime startTime, LocalDateTime endTime, Integer pageNum, Integer pageSize) {
         int validPageNum = pageNum == null || pageNum < 1 ? 1 : pageNum;
         int validPageSize = pageSize == null || pageSize < 1 ? 20 : Math.min(pageSize, 100);
-        int offset = (validPageNum - 1) * validPageSize;
+        long offset = ((long) validPageNum - 1L) * validPageSize;
         long total = answerRecordMapper.countPage(userId, questionId, isCorrect, startTime, endTime);
         List<AnswerRecord> records = answerRecordMapper.selectPage(userId, questionId, isCorrect, startTime, endTime, offset, validPageSize);
         List<AnswerRecordVO> voList = new ArrayList<AnswerRecordVO>();

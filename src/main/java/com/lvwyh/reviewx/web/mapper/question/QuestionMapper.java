@@ -28,12 +28,15 @@ public interface QuestionMapper {
     /** 按题目 ID 查询启用状态的题目。 */
     Question selectById(@Param("userId") Long userId, @Param("questionId") String questionId);
 
+    /** 刷题时按需查询当前题目的图片，避免取题列表批量加载 Base64。 */
+    Question selectImagesById(@Param("userId") Long userId, @Param("questionId") String questionId);
+
     /** 统计当前用户可导出的启用题目数量。 */
     long countForExport(@Param("userId") Long userId);
 
     /** 分页查询导出数据，限制单次加载的 Base64 大字段数量。 */
     List<Question> selectForExportPage(@Param("userId") Long userId,
-                                       @Param("offset") int offset,
+                                       @Param("offset") long offset,
                                        @Param("pageSize") int pageSize);
 
     /** 按关键字、年份、来源分页搜索题目。 */
@@ -43,7 +46,7 @@ public interface QuestionMapper {
                           @Param("questionYear") String questionYear,
                           @Param("questionSource") String questionSource,
                           @Param("questionJoinDate") String questionJoinDate,
-                          @Param("offset") int offset,
+                          @Param("offset") long offset,
                           @Param("pageSize") int pageSize);
 
     /** 统计搜索条件下的题目总数。 */
@@ -91,7 +94,7 @@ public interface QuestionMapper {
                                @Param("questionJoinDate") String questionJoinDate,
                                @Param("analysisScope") String analysisScope,
                                @Param("orderDirection") String orderDirection,
-                               @Param("offset") int offset,
+                               @Param("offset") long offset,
                                @Param("pageSize") int pageSize);
 
     /** 统计顺序刷题筛选条件下的题目总数。 */

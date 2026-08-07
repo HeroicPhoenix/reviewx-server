@@ -57,7 +57,9 @@ abstract class QuestionConvertSupport {
             vo.setAnswerSource(question.getAnswerSource());
         }
         vo.setAnalysisContent(question.getAnalysisContent());
-        vo.setAnalysisImageBase64(question.getAnalysisImageBase64());
+        if (includeImage) {
+            vo.setAnalysisImageBase64(question.getAnalysisImageBase64());
+        }
         vo.setQuestionYear(question.getQuestionYear());
         vo.setQuestionSource(question.getQuestionSource());
         vo.setQuestionJoinDate(question.getQuestionJoinDate());

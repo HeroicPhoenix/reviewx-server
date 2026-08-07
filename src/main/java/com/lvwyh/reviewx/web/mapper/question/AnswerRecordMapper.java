@@ -24,7 +24,7 @@ public interface AnswerRecordMapper {
                                   @Param("isCorrect") Integer isCorrect,
                                   @Param("startTime") LocalDateTime startTime,
                                   @Param("endTime") LocalDateTime endTime,
-                                  @Param("offset") int offset,
+                                  @Param("offset") long offset,
                                   @Param("pageSize") int pageSize);
 
     /** 统计当前用户答题记录分页总数。 */

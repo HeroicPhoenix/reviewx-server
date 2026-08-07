@@ -18,6 +18,9 @@ public interface QuestionService {
     /** 查看题目详情，允许返回正确答案。 */
     QuestionVO detail(Long userId, String questionId);
 
+    /** 刷题时按需查询单道题目的图片，不返回正确答案。 */
+    QuestionVO practiceImages(Long userId, String questionId);
+
     /** 搜索题目，返回分页结果。 */
     PageResult<QuestionVO> search(Long userId, String keyword, String questionType, String questionYear, String questionSource, String questionJoinDate, Integer pageNum, Integer pageSize);
 

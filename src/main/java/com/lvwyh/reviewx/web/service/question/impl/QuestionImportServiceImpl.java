@@ -97,12 +97,41 @@ public class QuestionImportServiceImpl implements QuestionImportService {
     }
 
     private QuestionImportResultVO importZipFile(Long userId, File zipFile, boolean dryRun, boolean failFast) {
+        Charset charset = detectZipCharset(zipFile);
+        return importZipWithCharset(userId, zipFile, charset, dryRun, failFast);
+    }
+
+    /**
+     * 先只读取 ZIP 中央目录来识别文件名编码，再执行一次真正导入。
+     *
+     * 这样既能兼容历史 GBK 中文文件名，也不会在题目已经写入后因为普通业务异常
+     * 错误地用另一种编码重跑整个导入过程。
+     */
+    private Charset detectZipCharset(File zipFile) {
+        Exception utf8Failure;
         try {
-            return importZipWithCharset(userId, zipFile, StandardCharsets.UTF_8, dryRun, failFast);
-        } catch (BusinessException e) {
-            throw e;
-        } catch (IllegalArgumentException e) {
-            return importZipWithCharset(userId, zipFile, Charset.forName("GBK"), dryRun, failFast);
+            verifyZipEntryNames(zipFile, StandardCharsets.UTF_8);
+            return StandardCharsets.UTF_8;
+        } catch (IOException | IllegalArgumentException e) {
+            utf8Failure = e;
+        }
+
+        Charset gbk = Charset.forName("GBK");
+        try {
+            verifyZipEntryNames(zipFile, gbk);
+            return gbk;
+        } catch (IOException | IllegalArgumentException e) {
+            e.addSuppressed(utf8Failure);
+            throw new BusinessException(400, "ZIP 文件损坏或文件名编码无法识别：" + e.getMessage(), e);
+        }
+    }
+
+    private void verifyZipEntryNames(File zipFile, Charset charset) throws IOException {
+        try (ZipFile zip = new ZipFile(zipFile, charset)) {
+            Enumeration<? extends ZipEntry> entries = zip.entries();
+            while (entries.hasMoreElements()) {
+                entries.nextElement().getName();
+            }
         }
     }
 

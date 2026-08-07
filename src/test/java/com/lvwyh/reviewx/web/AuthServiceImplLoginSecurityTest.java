@@ -18,16 +18,17 @@ import java.util.Collections;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/** 登录安全回归：管理员登录开关关闭时不能通过响应判断密码是否正确。 */
+/** 登录安全回归：不存在的用户与管理员登录开关都不能泄露凭证信息。 */
 class AuthServiceImplLoginSecurityTest {
 
     @Test
-    void disabledAdminLoginMustLookLikeInvalidCredentialsWithoutCheckingPassword() {
+    void disabledAdminLoginMustLookLikeInvalidCredentialsAfterNormalHashCheck() {
         SysUserMapper userMapper = mock(SysUserMapper.class);
         AccessService accessService = mock(AccessService.class);
         TokenService tokenService = mock(TokenService.class);
@@ -36,6 +37,7 @@ class AuthServiceImplLoginSecurityTest {
         LoginAttemptService loginAttemptService = mock(LoginAttemptService.class);
         AdminProperties adminProperties = new AdminProperties();
         adminProperties.setLoginEnabled(false);
+        when(passwordEncoder.encode(anyString())).thenReturn("dummy-password-hash");
         AuthServiceImpl service = new AuthServiceImpl(userMapper, accessService, tokenService, passwordEncoder,
                 jwtProperties, loginAttemptService, adminProperties);
 
@@ -49,14 +51,39 @@ class AuthServiceImplLoginSecurityTest {
         loginUser.setRoleCodes(Collections.singleton("ADMIN"));
         when(userMapper.selectByUsername("admin")).thenReturn(admin);
         when(accessService.loadLoginUser(1L)).thenReturn(loginUser);
+        when(passwordEncoder.matches("123456", "encoded-password")).thenReturn(true);
 
         BusinessException error = assertThrows(BusinessException.class,
                 () -> service.login("admin", "123456", "203.0.113.10"));
 
         assertEquals(401, error.getCode());
         assertEquals("用户名或密码错误", error.getMessage());
-        verify(passwordEncoder, never()).matches(anyString(), anyString());
+        verify(passwordEncoder).matches("123456", "encoded-password");
         verify(loginAttemptService).recordFailure("admin", "203.0.113.10");
+    }
+
+    @Test
+    void nonexistentUserMustStillRunPasswordHashCheck() {
+        SysUserMapper userMapper = mock(SysUserMapper.class);
+        AccessService accessService = mock(AccessService.class);
+        TokenService tokenService = mock(TokenService.class);
+        PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
+        JwtProperties jwtProperties = mock(JwtProperties.class);
+        LoginAttemptService loginAttemptService = mock(LoginAttemptService.class);
+        AdminProperties adminProperties = new AdminProperties();
+        when(passwordEncoder.encode(anyString())).thenReturn("dummy-password-hash");
+        AuthServiceImpl service = new AuthServiceImpl(userMapper, accessService, tokenService, passwordEncoder,
+                jwtProperties, loginAttemptService, adminProperties);
+        when(userMapper.selectByUsername("missing-user")).thenReturn(null);
+        when(passwordEncoder.matches("guess", "dummy-password-hash")).thenReturn(false);
+
+        BusinessException error = assertThrows(BusinessException.class,
+                () -> service.login("missing-user", "guess", "203.0.113.11"));
+
+        assertEquals(401, error.getCode());
+        assertEquals("用户名或密码错误", error.getMessage());
+        verify(passwordEncoder).matches("guess", "dummy-password-hash");
+        verify(accessService, never()).loadLoginUser(anyLong());
     }
 
     @Test
@@ -68,6 +95,7 @@ class AuthServiceImplLoginSecurityTest {
         JwtProperties jwtProperties = new JwtProperties();
         LoginAttemptService loginAttemptService = mock(LoginAttemptService.class);
         AdminProperties adminProperties = new AdminProperties();
+        when(passwordEncoder.encode(anyString())).thenReturn("dummy-password-hash");
         AuthServiceImpl service = new AuthServiceImpl(userMapper, accessService, tokenService, passwordEncoder,
                 jwtProperties, loginAttemptService, adminProperties);
 

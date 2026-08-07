@@ -50,6 +50,18 @@ public class PracticeController {
     }
 
     /**
+     * 按需加载当前题目的图片，避免取题列表一次返回全部 Base64 大字段。
+     */
+    @Operation(summary = "加载当前刷题题目的图片")
+    @RequirePermission("practice:question")
+    @GetMapping("/images")
+    public ApiResponse<QuestionVO> images(
+            @Size(max = 255, message = "题目ID最多255个字符") @RequestParam String questionId) {
+        Long userId = LoginUserContext.require().getUserId();
+        return ApiResponse.success("查询成功", questionService.practiceImages(userId, questionId));
+    }
+
+    /**
      * 随机取题。
      */
     @Operation(summary = "随机刷题")

@@ -23,7 +23,6 @@
         SELECT <include refid="Base_Column_List"/>
         FROM SYS_USER_API_KEY
         WHERE API_KEY_PREFIX = #{apiKeyPrefix}
-        LIMIT 1
     </select>
 
     <!-- 查询当前用户创建的 API Key 列表，不返回完整 Key 明文。 -->

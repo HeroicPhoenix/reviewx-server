@@ -13,6 +13,18 @@
         q.OPTION_5, q.OPTION_6, q.OPTION_7, q.OPTION_8, q.ANSWER_CONTENT, q.ANSWER_SOURCE, qa.ANALYSIS_CONTENT, qa.ANALYSIS_IMAGE_BASE64, q.QUESTION_YEAR,
         q.QUESTION_SOURCE, q.QUESTION_JOIN_DATE, q.CORRECT_RATE, q.QUESTION_STATUS, q.CREATED_TIME, q.UPDATED_TIME
     </sql>
+    <!-- 题库列表字段：保留答案和解析文本，但不从数据库读取任何 Base64 图片。 -->
+    <sql id="Q_List_Column_List">
+        q.QUESTION_ID, q.USER_ID, q.QUESTION_TYPE, q.QUESTION_CATEGORY, q.QUESTION_CONTENT, q.OPTION_1, q.OPTION_2, q.OPTION_3, q.OPTION_4,
+        q.OPTION_5, q.OPTION_6, q.OPTION_7, q.OPTION_8, q.ANSWER_CONTENT, q.ANSWER_SOURCE, qa.ANALYSIS_CONTENT, q.QUESTION_YEAR,
+        q.QUESTION_SOURCE, q.QUESTION_JOIN_DATE, q.CORRECT_RATE, q.QUESTION_STATUS, q.CREATED_TIME, q.UPDATED_TIME
+    </sql>
+    <!-- 刷题列表字段：不读取正确答案和 Base64 图片；图片由当前题目的按需接口单独加载。 -->
+    <sql id="Q_Practice_Column_List">
+        q.QUESTION_ID, q.USER_ID, q.QUESTION_TYPE, q.QUESTION_CATEGORY, q.QUESTION_CONTENT, q.OPTION_1, q.OPTION_2, q.OPTION_3, q.OPTION_4,
+        q.OPTION_5, q.OPTION_6, q.OPTION_7, q.OPTION_8, qa.ANALYSIS_CONTENT, q.QUESTION_YEAR,
+        q.QUESTION_SOURCE, q.QUESTION_JOIN_DATE, q.CORRECT_RATE, q.QUESTION_STATUS, q.CREATED_TIME, q.UPDATED_TIME
+    </sql>
 
     <!-- 导入题目时按 QUESTION_ID 幂等写入；重复导入会更新题目内容。 -->
     <insert id="upsert" parameterType="com.lvwyh.reviewx.web.entity.question.Question">
@@ -116,6 +128,21 @@
         LIMIT 1
     </select>
 
+    <!-- 刷题页只在当前题目需要显示时查询两张图片，不返回正确答案。 -->
+    <select id="selectImagesById" resultType="com.lvwyh.reviewx.web.entity.question.Question">
+        SELECT q.QUESTION_ID,
+               q.QUESTION_IMAGE_BASE64,
+               qa.ANALYSIS_IMAGE_BASE64
+        FROM QUESTION q
+        LEFT JOIN QUESTION_ANALYSIS qa
+          ON qa.USER_ID = q.USER_ID
+         AND qa.QUESTION_ID = q.QUESTION_ID
+        WHERE q.QUESTION_ID = #{questionId}
+          AND q.USER_ID = #{userId}
+          AND q.QUESTION_STATUS = 1
+        LIMIT 1
+    </select>
+
     <select id="countForExport" resultType="long">
         SELECT COUNT(1)
         FROM QUESTION
@@ -137,7 +164,7 @@
 
     <!-- 分页搜索题目，当前用于查看题库。 -->
     <select id="search" resultType="com.lvwyh.reviewx.web.entity.question.Question">
-        SELECT <include refid="Q_Base_Column_List"/>
+        SELECT <include refid="Q_List_Column_List"/>
         FROM QUESTION q
         LEFT JOIN QUESTION_ANALYSIS qa
           ON qa.USER_ID = q.USER_ID
@@ -244,7 +271,7 @@
 
     <!-- 随机抽题，用于普通随机练习。 -->
     <select id="selectRandom" resultType="com.lvwyh.reviewx.web.entity.question.Question">
-        SELECT <include refid="Q_Base_Column_List"/>
+        SELECT <include refid="Q_Practice_Column_List"/>
         FROM QUESTION q
         LEFT JOIN QUESTION_ANALYSIS qa
           ON qa.USER_ID = q.USER_ID
@@ -300,7 +327,7 @@
 
     <!-- 顺序取题，用于按题库顺序刷题。 -->
     <select id="selectOrder" resultType="com.lvwyh.reviewx.web.entity.question.Question">
-        SELECT <include refid="Q_Base_Column_List"/>
+        SELECT <include refid="Q_Practice_Column_List"/>
         FROM QUESTION q
         LEFT JOIN QUESTION_ANALYSIS qa
           ON qa.USER_ID = q.USER_ID
@@ -371,7 +398,7 @@
 
     <!-- 错题取题：先取当前用户答错过的题目 ID，再关联题目表随机返回。 -->
     <select id="selectWrong" resultType="com.lvwyh.reviewx.web.entity.question.Question">
-        SELECT <include refid="Q_Base_Column_List"/>
+        SELECT <include refid="Q_Practice_Column_List"/>
         FROM QUESTION q
         INNER JOIN (
             SELECT DISTINCT QUESTION_ID

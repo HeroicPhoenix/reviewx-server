@@ -194,9 +194,14 @@ public class QuestionJsonTransferServiceImpl implements QuestionJsonTransferServ
         putNullable(item, "option8", question.getOption8());
         try {
             JsonNode answers = objectMapper.readTree(question.getAnswerContent());
-            item.set("answerContent", answers != null && answers.isArray() ? answers : objectMapper.createArrayNode());
+            if (answers == null || !answers.isArray() || answers.size() == 0) {
+                throw new IllegalArgumentException("答案必须是非空 JSON 数组");
+            }
+            validateAnswersMatchOptions(question, answerLabels(answers));
+            item.set("answerContent", answers);
         } catch (Exception e) {
-            item.set("answerContent", objectMapper.createArrayNode());
+            throw new BusinessException(500,
+                    "题目 " + question.getQuestionId() + " 的答案数据损坏，导出已终止：" + e.getMessage(), e);
         }
         putNullable(item, "answerSource", question.getAnswerSource());
         putNullable(item, "questionYear", question.getQuestionYear());

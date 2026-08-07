@@ -58,6 +58,15 @@ public class QuestionServiceImpl extends QuestionConvertSupport implements Quest
         return toQuestionVO(question, true, true);
     }
 
+    @Override
+    public QuestionVO practiceImages(Long userId, String questionId) {
+        Question question = questionMapper.selectImagesById(userId, questionId);
+        if (question == null) {
+            throw new BusinessException(404, "题目不存在");
+        }
+        return toQuestionVO(question, false, true);
+    }
+
     /**
      * 搜索题目。
      *
@@ -67,7 +76,7 @@ public class QuestionServiceImpl extends QuestionConvertSupport implements Quest
     public PageResult<QuestionVO> search(Long userId, String keyword, String questionType, String questionYear, String questionSource, String questionJoinDate, Integer pageNum, Integer pageSize) {
         int validPageNum = validPageNum(pageNum);
         int validPageSize = validPageSize(pageSize);
-        int offset = (validPageNum - 1) * validPageSize;
+        long offset = ((long) validPageNum - 1L) * validPageSize;
         long total = questionMapper.countSearch(userId, keyword, questionType, questionYear, questionSource, questionJoinDate);
         return new PageResult<QuestionVO>(total, validPageNum, validPageSize,
                 toQuestionVOList(questionMapper.search(userId, keyword, questionType, questionYear, questionSource, questionJoinDate, offset, validPageSize), true, false));
@@ -193,7 +202,7 @@ public class QuestionServiceImpl extends QuestionConvertSupport implements Quest
      */
     @Override
     public List<QuestionVO> randomList(Long userId, String questionType, String questionYear, String questionSource, String questionJoinDate, String randomScope, String analysisScope, Integer size) {
-        return toQuestionVOList(questionMapper.selectRandom(userId, questionType, questionYear, questionSource, questionJoinDate, validRandomScope(randomScope), validAnalysisScope(analysisScope), validSize(size)), false, true);
+        return toQuestionVOList(questionMapper.selectRandom(userId, questionType, questionYear, questionSource, questionJoinDate, validRandomScope(randomScope), validAnalysisScope(analysisScope), validSize(size)), false, false);
     }
 
     /**
@@ -205,12 +214,12 @@ public class QuestionServiceImpl extends QuestionConvertSupport implements Quest
     public PageResult<QuestionVO> orderList(Long userId, String questionType, String questionYear, String questionSource, String questionJoinDate, String analysisScope, String orderDirection, Integer pageNum, Integer pageSize) {
         int validPageNum = validPageNum(pageNum);
         int validPageSize = validPageSize(pageSize);
-        int offset = (validPageNum - 1) * validPageSize;
+        long offset = ((long) validPageNum - 1L) * validPageSize;
         String validAnalysisScope = validAnalysisScope(analysisScope);
         String validOrderDirection = validOrderDirection(orderDirection);
         long total = questionMapper.countOrder(userId, questionType, questionYear, questionSource, questionJoinDate, validAnalysisScope);
         return new PageResult<QuestionVO>(total, validPageNum, validPageSize,
-                toQuestionVOList(questionMapper.selectOrder(userId, questionType, questionYear, questionSource, questionJoinDate, validAnalysisScope, validOrderDirection, offset, validPageSize), false, true));
+                toQuestionVOList(questionMapper.selectOrder(userId, questionType, questionYear, questionSource, questionJoinDate, validAnalysisScope, validOrderDirection, offset, validPageSize), false, false));
     }
 
     /**
@@ -220,7 +229,7 @@ public class QuestionServiceImpl extends QuestionConvertSupport implements Quest
      */
     @Override
     public List<QuestionVO> wrongList(Long userId, String questionType, String questionYear, String questionSource, String questionJoinDate, Integer size) {
-        return toQuestionVOList(questionMapper.selectWrong(userId, questionType, questionYear, questionSource, questionJoinDate, validSize(size)), false, true);
+        return toQuestionVOList(questionMapper.selectWrong(userId, questionType, questionYear, questionSource, questionJoinDate, validSize(size)), false, false);
     }
 
     /**

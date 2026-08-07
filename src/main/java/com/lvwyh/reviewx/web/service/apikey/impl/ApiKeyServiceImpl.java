@@ -37,6 +37,9 @@ public class ApiKeyServiceImpl extends ApiKeySecretSupport implements ApiKeyServ
     @Transactional(rollbackFor = Exception.class)
     public ApiKeyCreateVO create(Long userId, ApiKeyCreateAO ao) {
         LocalDateTime now = LocalDateTime.now();
+        if (ao.getExpireTime() != null && !ao.getExpireTime().isAfter(now)) {
+            throw new BusinessException(400, "API Key过期时间必须晚于当前时间");
+        }
         String prefix = generateUniquePrefix();
         String apiKey = generateApiKey(prefix);
 

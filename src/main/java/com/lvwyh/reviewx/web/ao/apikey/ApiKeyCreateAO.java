@@ -3,6 +3,7 @@ package com.lvwyh.reviewx.web.ao.apikey;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Future;
 import javax.validation.constraints.Size;
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -19,6 +20,7 @@ public class ApiKeyCreateAO implements Serializable {
     private String apiKeyName;
 
     /** 过期时间，空表示不过期。 */
+    @Future(message = "API Key过期时间必须晚于当前时间")
     private LocalDateTime expireTime;
 
     public String getApiKeyName() { return apiKeyName; }

@@ -39,6 +39,7 @@ public class AuthServiceImpl implements AuthService {
     private final JwtProperties jwtProperties;
     private final LoginAttemptService loginAttemptService;
     private final AdminProperties adminProperties;
+    private final String dummyPasswordHash;
 
     public AuthServiceImpl(SysUserMapper sysUserMapper,
                            AccessService accessService,
@@ -54,6 +55,8 @@ public class AuthServiceImpl implements AuthService {
         this.jwtProperties = jwtProperties;
         this.loginAttemptService = loginAttemptService;
         this.adminProperties = adminProperties;
+        // 不存在或禁用的用户也执行一次与真实账号相同的密码哈希校验，降低用户名时序枚举风险。
+        this.dummyPasswordHash = passwordEncoder.encode("reviewx-dummy-password-for-timing-only");
     }
 
     /**
@@ -65,19 +68,15 @@ public class AuthServiceImpl implements AuthService {
     public LoginVO login(String username, String password, String clientAddress) {
         loginAttemptService.checkAllowed(username, clientAddress);
         SysUser user = sysUserMapper.selectByUsername(username);
-        if (user == null || !Integer.valueOf(1).equals(user.getUserStatus())) {
-            loginAttemptService.recordFailure(username, clientAddress);
-            throw new BusinessException(401, INVALID_CREDENTIALS_MESSAGE);
-        }
-
-        LoginUser loginUser = accessService.loadLoginUser(user.getUserId());
-        // 管理员登录开关关闭时不验证密码，所有来源统一按凭证错误处理。
-        if (loginUser.getRoleCodes().contains(ADMIN_ROLE_CODE) && !adminProperties.isLoginEnabled()) {
-            loginAttemptService.recordFailure(username, clientAddress);
-            throw new BusinessException(401, INVALID_CREDENTIALS_MESSAGE);
-        }
-
-        if (!passwordEncoder.matches(password, user.getPasswordHash())) {
+        boolean activeUser = user != null && Integer.valueOf(1).equals(user.getUserStatus());
+        String passwordHash = activeUser ? user.getPasswordHash() : dummyPasswordHash;
+        boolean passwordMatches = passwordEncoder.matches(password, passwordHash);
+        // 已存在账号无论密码是否正确都加载相同的角色信息，避免管理员开关场景泄露密码是否正确。
+        LoginUser loginUser = activeUser ? accessService.loadLoginUser(user.getUserId()) : null;
+        boolean adminLoginDisabled = loginUser != null
+                && loginUser.getRoleCodes().contains(ADMIN_ROLE_CODE)
+                && !adminProperties.isLoginEnabled();
+        if (!activeUser || !passwordMatches || adminLoginDisabled) {
             loginAttemptService.recordFailure(username, clientAddress);
             throw new BusinessException(401, INVALID_CREDENTIALS_MESSAGE);
         }
