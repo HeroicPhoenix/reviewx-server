@@ -16,6 +16,18 @@ import java.util.List;
 @Mapper
 public interface QuestionMapper {
 
+    /** 查询联动筛选的可选值。 */
+    List<String> selectPracticeQuestionTypes(@Param("userId") Long userId, @Param("questionType") String questionType, @Param("questionYear") String questionYear, @Param("questionSource") String questionSource, @Param("questionJoinDate") String questionJoinDate, @Param("analysisScope") String analysisScope);
+
+    /** 查询联动筛选的可选值。 */
+    List<String> selectPracticeQuestionYears(@Param("userId") Long userId, @Param("questionType") String questionType, @Param("questionYear") String questionYear, @Param("questionSource") String questionSource, @Param("questionJoinDate") String questionJoinDate, @Param("analysisScope") String analysisScope);
+
+    /** 查询联动筛选的可选值。 */
+    List<String> selectPracticeQuestionSources(@Param("userId") Long userId, @Param("questionType") String questionType, @Param("questionYear") String questionYear, @Param("questionSource") String questionSource, @Param("questionJoinDate") String questionJoinDate, @Param("analysisScope") String analysisScope);
+
+    /** 查询联动筛选的可选值。 */
+    List<String> selectPracticeQuestionJoinDates(@Param("userId") Long userId, @Param("questionType") String questionType, @Param("questionYear") String questionYear, @Param("questionSource") String questionSource, @Param("questionJoinDate") String questionJoinDate, @Param("analysisScope") String analysisScope);
+
     /** 新增或更新题目，导入题库时按 questionId 幂等写入。 */
     int upsert(Question question);
 

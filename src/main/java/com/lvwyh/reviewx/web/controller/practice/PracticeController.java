@@ -9,6 +9,7 @@ import com.lvwyh.reviewx.web.service.question.AnswerRecordService;
 import com.lvwyh.reviewx.web.service.question.QuestionService;
 import com.lvwyh.reviewx.web.vo.practice.SubmitAnswerVO;
 import com.lvwyh.reviewx.web.vo.question.QuestionVO;
+import com.lvwyh.reviewx.web.vo.question.QuestionFilterOptionsVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.logging.log4j.LogManager;
@@ -47,6 +48,20 @@ public class PracticeController {
     public PracticeController(QuestionService questionService, AnswerRecordService answerRecordService) {
         this.questionService = questionService;
         this.answerRecordService = answerRecordService;
+    }
+
+    @Operation(summary = "查询刷题联动筛选选项")
+    @RequirePermission("practice:question")
+    @GetMapping("/filterOptions")
+    public ApiResponse<QuestionFilterOptionsVO> filterOptions(@Size(max = 64, message = "题目分类最多64个字符") @RequestParam(required = false) String questionType,
+                                                     @Pattern(regexp = "^$|^\\d{4}$", message = "题目年份必须是4位数字") @RequestParam(required = false) String questionYear,
+                                                     @Size(max = 255, message = "题目来源最多255个字符") @RequestParam(required = false) String questionSource,
+                                                     @Pattern(regexp = "^$|^\\d{4}-\\d{2}-\\d{2}$", message = "题目加入日期格式必须是yyyy-MM-dd") @RequestParam(required = false) String questionJoinDate,
+                                                     @Pattern(regexp = "^$|^(all|analyzed|unanalyzed)$", message = "解析范围不合法") @RequestParam(required = false) String analysisScope) {
+        Long userId = LoginUserContext.require().getUserId();
+        log.info("Practice filter options request: userId={}, analysisScope={}", userId, analysisScope);
+        return ApiResponse.success("查询成功", new QuestionFilterOptionsVO(
+                questionService.practiceFilterOptions(userId, questionType, questionYear, questionSource, questionJoinDate, analysisScope)));
     }
 
     /**

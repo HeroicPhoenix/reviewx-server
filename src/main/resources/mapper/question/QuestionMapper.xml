@@ -332,21 +332,7 @@
         LEFT JOIN QUESTION_ANALYSIS qa
           ON qa.USER_ID = q.USER_ID
          AND qa.QUESTION_ID = q.QUESTION_ID
-        WHERE q.QUESTION_STATUS = 1
-          AND q.USER_ID = #{userId}
-        <if test="questionType != null and questionType != ''">
-            AND q.QUESTION_CATEGORY = #{questionType}
-        </if>
-        <if test="questionYear != null and questionYear != ''">
-            AND q.QUESTION_YEAR = #{questionYear}
-        </if>
-        <if test="questionSource != null and questionSource != ''">
-            AND q.QUESTION_SOURCE = #{questionSource}
-        </if>
-        <if test="questionJoinDate != null and questionJoinDate != ''">
-            AND q.QUESTION_JOIN_DATE = #{questionJoinDate}
-        </if>
-        <include refid="Analysis_Scope_Filter"/>
+        WHERE <include refid="Practice_Filter_Where"/>
         ORDER BY q.QUESTION_JOIN_DATE
         <choose>
             <when test="orderDirection == 'desc'">DESC, q.QUESTION_ID DESC</when>
@@ -361,21 +347,7 @@
         LEFT JOIN QUESTION_ANALYSIS qa
           ON qa.USER_ID = q.USER_ID
          AND qa.QUESTION_ID = q.QUESTION_ID
-        WHERE q.QUESTION_STATUS = 1
-          AND q.USER_ID = #{userId}
-        <if test="questionType != null and questionType != ''">
-            AND q.QUESTION_CATEGORY = #{questionType}
-        </if>
-        <if test="questionYear != null and questionYear != ''">
-            AND q.QUESTION_YEAR = #{questionYear}
-        </if>
-        <if test="questionSource != null and questionSource != ''">
-            AND q.QUESTION_SOURCE = #{questionSource}
-        </if>
-        <if test="questionJoinDate != null and questionJoinDate != ''">
-            AND q.QUESTION_JOIN_DATE = #{questionJoinDate}
-        </if>
-        <include refid="Analysis_Scope_Filter"/>
+        WHERE <include refid="Practice_Filter_Where"/>
     </select>
 
     <sql id="Analysis_Scope_Filter">
@@ -426,4 +398,65 @@
         ORDER BY RAND()
         LIMIT #{size}
     </select>
+    <sql id="Practice_Filter_Where">
+        q.QUESTION_STATUS = 1
+          AND q.USER_ID = #{userId}
+        <if test="questionType != null and questionType != ''">
+            AND q.QUESTION_CATEGORY = #{questionType}
+        </if>
+        <if test="questionYear != null and questionYear != ''">
+            AND q.QUESTION_YEAR = #{questionYear}
+        </if>
+        <if test="questionSource != null and questionSource != ''">
+            AND q.QUESTION_SOURCE = #{questionSource}
+        </if>
+        <if test="questionJoinDate != null and questionJoinDate != ''">
+            AND q.QUESTION_JOIN_DATE = #{questionJoinDate}
+        </if>
+        <include refid="Analysis_Scope_Filter"/>
+    </sql>
+
+    <select id="selectPracticeQuestionTypes" resultType="string">
+        SELECT DISTINCT q.QUESTION_CATEGORY AS option_value
+        FROM QUESTION q
+        LEFT JOIN QUESTION_ANALYSIS qa
+          ON qa.USER_ID = q.USER_ID AND qa.QUESTION_ID = q.QUESTION_ID
+        WHERE <include refid="Practice_Filter_Where"/>
+          AND q.QUESTION_CATEGORY IS NOT NULL
+          AND q.QUESTION_CATEGORY != ''
+        ORDER BY option_value ASC
+    </select>
+
+    <select id="selectPracticeQuestionYears" resultType="string">
+        SELECT DISTINCT q.QUESTION_YEAR AS option_value
+        FROM QUESTION q
+        LEFT JOIN QUESTION_ANALYSIS qa
+          ON qa.USER_ID = q.USER_ID AND qa.QUESTION_ID = q.QUESTION_ID
+        WHERE <include refid="Practice_Filter_Where"/>
+          AND q.QUESTION_YEAR IS NOT NULL
+          AND q.QUESTION_YEAR != ''
+        ORDER BY option_value DESC
+    </select>
+
+    <select id="selectPracticeQuestionSources" resultType="string">
+        SELECT DISTINCT q.QUESTION_SOURCE AS option_value
+        FROM QUESTION q
+        LEFT JOIN QUESTION_ANALYSIS qa
+          ON qa.USER_ID = q.USER_ID AND qa.QUESTION_ID = q.QUESTION_ID
+        WHERE <include refid="Practice_Filter_Where"/>
+          AND q.QUESTION_SOURCE IS NOT NULL
+          AND q.QUESTION_SOURCE != ''
+        ORDER BY option_value ASC
+    </select>
+
+    <select id="selectPracticeQuestionJoinDates" resultType="string">
+        SELECT DISTINCT DATE_FORMAT(q.QUESTION_JOIN_DATE, '%Y-%m-%d') AS option_value
+        FROM QUESTION q
+        LEFT JOIN QUESTION_ANALYSIS qa
+          ON qa.USER_ID = q.USER_ID AND qa.QUESTION_ID = q.QUESTION_ID
+        WHERE <include refid="Practice_Filter_Where"/>
+          AND q.QUESTION_JOIN_DATE IS NOT NULL
+        ORDER BY option_value DESC
+    </select>
+
 </mapper>

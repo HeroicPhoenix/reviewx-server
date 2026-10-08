@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import com.lvwyh.reviewx.web.dto.question.QuestionFilterOptionsDTO;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,6 +43,17 @@ public class QuestionServiceImpl extends QuestionConvertSupport implements Quest
         super(objectMapper);
         this.questionMapper = questionMapper;
         this.questionAnalysisMapper = questionAnalysisMapper;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public QuestionFilterOptionsDTO practiceFilterOptions(Long userId, String questionType, String questionYear, String questionSource, String questionJoinDate, String analysisScope) {
+        String scope = validAnalysisScope(analysisScope);
+        return new QuestionFilterOptionsDTO(
+                questionMapper.selectPracticeQuestionTypes(userId, null, questionYear, questionSource, questionJoinDate, scope),
+                questionMapper.selectPracticeQuestionYears(userId, questionType, null, questionSource, questionJoinDate, scope),
+                questionMapper.selectPracticeQuestionSources(userId, questionType, questionYear, null, questionJoinDate, scope),
+                questionMapper.selectPracticeQuestionJoinDates(userId, questionType, questionYear, questionSource, null, scope));
     }
 
     /**

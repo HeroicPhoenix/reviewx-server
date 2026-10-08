@@ -7,6 +7,7 @@ import com.lvwyh.reviewx.web.vo.question.QuestionVO;
 import com.lvwyh.reviewx.web.vo.question.QuestionOverviewStatVO;
 
 import java.util.List;
+import com.lvwyh.reviewx.web.dto.question.QuestionFilterOptionsDTO;
 
 /**
  * 题目查询服务接口。
@@ -14,6 +15,9 @@ import java.util.List;
  * 提供题目查看、搜索、刷题取题和题目维护能力。
  */
 public interface QuestionService {
+
+    /** 每个维度受解析状态和其他三个维度约束，忽略自身已选值。 */
+    QuestionFilterOptionsDTO practiceFilterOptions(Long userId, String questionType, String questionYear, String questionSource, String questionJoinDate, String analysisScope);
 
     /** 查看题目详情，允许返回正确答案。 */
     QuestionVO detail(Long userId, String questionId);
